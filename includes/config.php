@@ -71,6 +71,10 @@ function require_parent() {
 }
 function parent_id() { return (int)($_SESSION['user_id'] ?? 0); }
 
+function require_admin() {
+    if (($_SESSION['role'] ?? '') !== 'admin') redirect('../authentication/login.php');
+}
+
 function require_hospital() {
     if (($_SESSION['role'] ?? '') !== 'hospital' || empty($_SESSION['user_id'])) redirect('../authentication/login.php');
 }
