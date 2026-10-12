@@ -58,13 +58,38 @@ foreach ($rows as $r) {
     $byDate[$r['appointment_date']][] = $r;
 }
 
-// Overall progress of every child
-$progress = $pdo->query('SELECT c.id, c.name, c.dob, p.full_name AS parent_name,
-        COUNT(s.id) AS total, COALESCE(SUM(s.is_vaccinated), 0) AS done
+
+ // Overall progress of every child — no database view required
+$progress = $pdo->query("
+    SELECT
+        c.id,
+        c.name,
+        c.dob,
+        p.full_name AS parent_name,
+
+        (
+            SELECT COUNT(*)
+            FROM child_vaccinations cv
+            WHERE cv.child_id = c.id
+        ) AS total,
+
+        (
+            SELECT COUNT(*)
+            FROM child_vaccinations cv
+            WHERE cv.child_id = c.id
+              AND EXISTS (
+                  SELECT 1
+                  FROM appointments a
+                  WHERE a.child_vaccination_id = cv.id
+                    AND a.vaccination_status = 'Vaccinated'
+              )
+        ) AS done
+
     FROM children c
     JOIN parents p ON p.id = c.parent_id
-    LEFT JOIN v_child_schedule s ON s.child_id = c.id
-    GROUP BY c.id, c.name, c.dob, p.full_name ORDER BY c.name')->fetchAll();
+    ORDER BY c.name
+")->fetchAll();
+
 
 $filtered = ($from !== '' || $to !== '' || $search !== '' || $vaccineId || $hospitalId || $outcome !== '');
 $exportUrl = 'reports.php' . qs(['from' => $from, 'to' => $to, 'q' => $search, 'vaccine' => $vaccineId, 'hospital' => $hospitalId, 'outcome' => $outcome, 'export' => 1]);
