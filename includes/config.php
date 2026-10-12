@@ -99,7 +99,7 @@ function age_text($dob) {
     return $diff->d . ' days';
 }
 
-// Current state of one row from the v_child_schedule view
+
 function schedule_status($row) {
     if ($row['is_vaccinated']) return 'Vaccinated';
     if ($row['booking_status']) return $row['booking_status'] === 'Approved' ? 'Booked (Approved)' : 'Booked (Pending)';

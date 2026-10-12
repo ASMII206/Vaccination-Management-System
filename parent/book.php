@@ -8,15 +8,56 @@ $pid = parent_id();
 $cvId = (int)($_GET['cv'] ?? $_POST['cv'] ?? 0);
 $slots = ['09:00 AM - 11:00 AM', '11:00 AM - 01:00 PM', '02:00 PM - 04:00 PM', '04:00 PM - 06:00 PM'];
 
-// The schedule entry must belong to the logged-in parent
-$q = $pdo->prepare('SELECT * FROM v_child_schedule WHERE id = ? AND parent_id = ?');
+
+$q = $pdo->prepare("
+    SELECT
+        cv.id,
+        cv.child_id,
+        c.parent_id,
+        c.name AS child_name,
+        c.dob,
+        cv.vaccine_id,
+        v.name AS vaccine_name,
+        v.availability,
+        cv.due_date,
+
+        EXISTS (
+            SELECT 1
+            FROM appointments a
+            WHERE a.child_vaccination_id = cv.id
+              AND a.vaccination_status = 'Vaccinated'
+        ) AS is_vaccinated,
+
+        (
+            SELECT a.status
+            FROM appointments a
+            WHERE a.child_vaccination_id = cv.id
+              AND a.status IN ('Pending', 'Approved')
+              AND a.vaccination_status = 'Pending'
+            ORDER BY a.id DESC
+            LIMIT 1
+        ) AS booking_status
+
+    FROM child_vaccinations cv
+    JOIN children c ON c.id = cv.child_id
+    JOIN vaccines v ON v.id = cv.vaccine_id
+    WHERE cv.id = ?
+      AND c.parent_id = ?
+    LIMIT 1
+");
+
 $q->execute([$cvId, $pid]);
 $item = $q->fetch();
+
 if (!$item) {
     flash('error', 'Vaccination entry not found.');
     redirect('vaccinations.php');
 }
 $state = schedule_status($item);
+if ($item && $item['is_vaccinated']) {
+    flash('error', 'This vaccination has already been completed.');
+    redirect('vaccinations.php');
+}
 if (!in_array($state, ['Upcoming', 'Overdue'], true)) {
     flash('error', 'This vaccination cannot be booked right now (status: ' . $state . ').');
     redirect('vaccinations.php');
