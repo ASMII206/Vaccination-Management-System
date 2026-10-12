@@ -19,7 +19,10 @@ $flash = flash();
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><div class="mk">VMS</div><span>Hospital<br>Portal</span></div>
+  <div class="brand">
+    <img src="" alt="Vax Care Logo" class="sidebar-logo">
+    <span>Hospital<br>Portal</span>
+</div>
     <nav class="nav-w">
         <a class="nav <?= $active === 'dashboard.php' ? 'on' : '' ?>" href="dashboard.php">Dashboard</a>
         <a class="nav <?= $active === 'appointments.php' ? 'on' : '' ?>" href="appointments.php">Appointments<?php if ($scheduledCount): ?><span class="bdg"><?= $scheduledCount ?></span><?php endif; ?></a>

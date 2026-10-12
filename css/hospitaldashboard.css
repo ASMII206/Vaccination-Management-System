@@ -9,13 +9,16 @@ body {
 }
 
 /* Dashboard Layout */
-
 .app {
     display: grid;
-    grid-template-columns: 248px 1fr;
+    grid-template-columns: 40px minmax(0, 1fr);
     min-height: 100vh;
+    transition: grid-template-columns 0.3s ease;
 }
 
+.app:has(.side:hover) {
+    grid-template-columns: 248px minmax(0, 1fr);
+}
 .side {
     background: #142542;
     color: white;
@@ -27,6 +30,16 @@ body {
     top: 0;
     height: 100vh;
     align-self: start;
+    width: 68px;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: width 0.3s ease, padding 0.3s ease;
+    z-index: 1000;
+}
+
+.side:hover {
+    width: 248px;
 }
 
 /* Sidebar Navigation */
@@ -37,16 +50,12 @@ body {
     align-items: center;
     color: white;
 }
-
-.mk {
-    width: 34px;
-    height: 34px;
+.sidebar-logo {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    flex-shrink: 0;
     border-radius: 8px;
-    background: #FFA812;
-    color: #142542;
-    display: grid;
-    place-items: center;
-    font-weight: 800;
 }
 
 .nav-w {
@@ -704,3 +713,51 @@ td small {
 .top h1 { margin: 0 0 4px; }
 .top .mut { margin: 0; }
 .out { display: block; box-sizing: border-box; }   /* it is a link, so width:100% needs block */
+/* Sidebar text hidden by default */
+.side .brand > :not(.mk),
+.side .nav,
+.side .foot {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+}
+
+/* Show complete menu on hover */
+.side:hover .brand > :not(.mk),
+.side:hover .nav,
+.side:hover .foot {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Keep logo visible */
+.side .brand {
+    min-width: 216px;
+}
+
+.side .nav {
+    min-width: 216px;
+}
+
+/* Mobile and tablet: keep existing full menu */
+@media (max-width: 900px) {
+    .app {
+        grid-template-columns: 1fr;
+    }
+
+    .side {
+        width: 100%;
+        height: auto;
+        position: static;
+        overflow: visible;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .side .brand > :not(.mk),
+    .side .nav,
+    .side .foot {
+        opacity: 1;
+        visibility: visible;
+    }
+}

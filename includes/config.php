@@ -6,10 +6,10 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 date_default_timezone_set('Asia/Karachi');
 
-define('DB_HOST', 'sql204.infinityfree.com');
-define('DB_NAME', 'if0_43146506_vaccination_db');
-define('DB_USER', 'if0_43146506');
-define('DB_PASS', 'eprojectphp');
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'vaccination_db');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 
 /* Admin account (checked on the server, never in the browser).
    Email:    admin@vaxcare.com

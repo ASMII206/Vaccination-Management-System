@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>VaxCare | Vaccination Management System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
-
     <!-- Navbar -->
      <div class="main">
     <header>
@@ -23,8 +20,6 @@
         <span></span>
         <span></span>
     </button>
-
-
         <nav>
             <div class="links">
             <a href="index.php">Home</a>
@@ -39,34 +34,21 @@
             </div>
         </nav>
     </header>
-
-
-
     <section class="hero">
-
         <div class="hero-content">
-
-           
             <h1>
                 Protecting Lives Through
                 <span>Smart Vaccination</span>
             </h1>
-
-
             <div class="hero-buttons">
                 <a href="authentication/register.php?role=parent" class="primary-btn">
                     Get Started
                 </a>
-
                 <a href="#about" class="secondary-btn">
                     Learn More
                 </a>
             </div>
-
         </div>
-
-       
-
     </section>
     </div>
     <section class="about-us" id="about">
