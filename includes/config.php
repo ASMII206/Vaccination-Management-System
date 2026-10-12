@@ -1,8 +1,4 @@
 <?php
-/* =========================================================
-   VaxCare - shared configuration, database connection, helpers
-   Local setup (XAMPP): MySQL user "root" with an empty password.
-========================================================= */
 
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
