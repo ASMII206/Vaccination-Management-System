@@ -114,9 +114,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if ($hospitalId) {
                         // Booking request for the child's next available vaccine
-                        $q = $pdo->prepare("SELECT id FROM v_child_schedule WHERE child_id = ? AND availability = 'Available' ORDER BY due_date, id LIMIT 1");
-                        $q->execute([$childId]);
-                        $cvId = $q->fetchColumn();
+                        
+$q = $pdo->prepare("
+    SELECT cv.id
+    FROM child_vaccinations cv
+    JOIN vaccines v ON v.id = cv.vaccine_id
+    WHERE cv.child_id = ?
+      AND v.availability = 'Available'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM appointments a
+          WHERE a.child_vaccination_id = cv.id
+            AND a.vaccination_status = 'Vaccinated'
+      )
+    ORDER BY cv.due_date, cv.id
+    LIMIT 1
+");
+$q->execute([$childId]);
+$cvId = $q->fetchColumn();
+
                         if ($cvId) {
                             $pdo->prepare('INSERT INTO appointments (child_vaccination_id, parent_id, hospital_id, appointment_date, time_slot) VALUES (?,?,?,?,?)')
                                 ->execute([$cvId, $parentId, $hospitalId, $old['vaccine_date'], 'To be confirmed']);
