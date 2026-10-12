@@ -19,8 +19,37 @@ $pendingReq  = $count("SELECT COUNT(*) FROM appointments WHERE status = 'Pending
 $approved    = $count("SELECT COUNT(*) FROM appointments WHERE status = 'Approved'");
 $vaccinated  = $count("SELECT COUNT(*) FROM appointments WHERE status = 'Approved' AND vaccination_status = 'Vaccinated'");
 $unavailable = $count("SELECT COUNT(*) FROM vaccines WHERE availability = 'Unavailable'");
-$dueSoon     = $count('SELECT COUNT(*) FROM v_child_schedule WHERE is_vaccinated = 0 AND due_date BETWEEN ? AND ?', [$today, $soon]);
-$overdue     = $count('SELECT COUNT(*) FROM v_child_schedule WHERE is_vaccinated = 0 AND due_date < ?', [$today]);
+
+$dueSoon = $count(
+    "SELECT COUNT(*)
+     FROM child_vaccinations cv
+     JOIN children c ON c.id = cv.child_id
+     JOIN vaccines v ON v.id = cv.vaccine_id
+     WHERE NOT EXISTS (
+         SELECT 1
+         FROM appointments a
+         WHERE a.child_vaccination_id = cv.id
+           AND a.vaccination_status = 'Vaccinated'
+     )
+     AND cv.due_date BETWEEN ? AND ?",
+    [$today, $soon]
+);
+
+$overdue = $count(
+    "SELECT COUNT(*)
+     FROM child_vaccinations cv
+     JOIN children c ON c.id = cv.child_id
+     JOIN vaccines v ON v.id = cv.vaccine_id
+     WHERE NOT EXISTS (
+         SELECT 1
+         FROM appointments a
+         WHERE a.child_vaccination_id = cv.id
+           AND a.vaccination_status = 'Vaccinated'
+     )
+     AND cv.due_date < ?",
+    [$today]
+);
+
 
 // Newest requests waiting for a decision
 $latest = $pdo->query("SELECT a.id, a.appointment_date, a.time_slot, h.name AS hospital, c.name AS child_name, v.name AS vaccine_name, p.full_name AS parent_name
@@ -33,9 +62,30 @@ $latest = $pdo->query("SELECT a.id, a.appointment_date, a.time_slot, h.name AS h
     WHERE a.status = 'Pending' ORDER BY a.created_at DESC, a.id DESC LIMIT 5")->fetchAll();
 
 // Next vaccination dates
-$q = $pdo->prepare('SELECT child_name, vaccine_name, due_date FROM v_child_schedule WHERE is_vaccinated = 0 AND due_date >= ? ORDER BY due_date, child_name LIMIT 6');
+
+ // Next vaccination dates
+$q = $pdo->prepare(
+    "SELECT
+        c.name AS child_name,
+        v.name AS vaccine_name,
+        cv.due_date
+     FROM child_vaccinations cv
+     JOIN children c ON c.id = cv.child_id
+     JOIN vaccines v ON v.id = cv.vaccine_id
+     WHERE NOT EXISTS (
+         SELECT 1
+         FROM appointments a
+         WHERE a.child_vaccination_id = cv.id
+           AND a.vaccination_status = 'Vaccinated'
+     )
+     AND cv.due_date >= ?
+     ORDER BY cv.due_date, c.name
+     LIMIT 6"
+);
+
 $q->execute([$today]);
 $upcoming = $q->fetchAll();
+
 
 // Vaccine availability
 $vaccines = $pdo->query('SELECT name, availability FROM vaccines ORDER BY name')->fetchAll();
