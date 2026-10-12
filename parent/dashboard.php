@@ -16,7 +16,6 @@ $q = $pdo->prepare(
 $q->execute([$pid]);
 $children = $q->fetchAll();
 
-// Vaccination schedule without using v_child_schedule
 $scheduleSql = "
     SELECT
         cv.id,

@@ -30,9 +30,27 @@ include 'includes/layout_top.php';
 <?php endif; ?>
 
 <?php foreach ($children as $c):
-    $s = $pdo->prepare('SELECT COUNT(*) AS total, COALESCE(SUM(is_vaccinated), 0) AS done FROM v_child_schedule WHERE child_id = ?');
-    $s->execute([$c['id']]);
-    $p = $s->fetch();
+    $s = $pdo->prepare("
+    SELECT
+        COUNT(*) AS total,
+        COALESCE(SUM(
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM appointments a
+                    WHERE a.child_vaccination_id = cv.id
+                      AND a.vaccination_status = 'Vaccinated'
+                )
+                THEN 1
+                ELSE 0
+            END
+        ), 0) AS done
+    FROM child_vaccinations cv
+    WHERE cv.child_id = ?
+");
+
+$s->execute([$c['id']]);
+$p = $s->fetch();
     $records = $byChild[$c['id']] ?? []; ?>
 <div class="card">
     <h2 class="card-title"><i class="fa-solid fa-file-medical"></i><?= e($c['name']) ?>
