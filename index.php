@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-alert error"><?= htmlspecialchars($error) ?></div>
                 <?php endif; ?>
 
-                <form method="post" action="contact.php" novalidate>
+                <form method="post" action="index.php#contact">
                     <label for="name">Name</label>
                     <input type="text" id="name" name="name" value="<?= htmlspecialchars($name) ?>" required>
 
