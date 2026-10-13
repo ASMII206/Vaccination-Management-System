@@ -203,7 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h2>Get in touch</h2>
                 <ul>
                     <li>  <i class="fa-solid fa-clock"></i></i><strong>SCHEDULE</strong>Sun-Fri:9AM-6PM</li>
-                    <li> <i class="fa-solid fa-location-dot"></i><strong>LOCATION</strong>Karchi,Pakistan</li>
+                    <li> <i class="fa-solid fa-location-dot"></i><strong>LOCATION</strong>Karachi,Pakistan</li>
                     <li> <i class="fa-solid fa-envelope"></i><strong>OUR MAIL</strong>Support@gmail.com</li>
                 </ul>
             </div>
