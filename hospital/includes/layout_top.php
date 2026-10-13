@@ -20,7 +20,7 @@ $flash = flash();
 <div class="app">
   <aside class="side">
   <div class="brand">
-    <img src="" alt="Vax Care Logo" class="sidebar-logo">
+    <img src="../images/final bg logo.png" alt="Vax Care Logo" class="sidebar-logo mk">
     <span>Hospital<br>Portal</span>
 </div>
     <nav class="nav-w">
