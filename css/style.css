@@ -5,19 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 * {
     margin: 0;
     padding: 0;
@@ -60,8 +47,6 @@ header {
     from { opacity: 0; transform: translateY(-30px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-
-
 header nav {
     position: relative;
     width: 82%;
@@ -80,21 +65,21 @@ header nav::after {
     content: "";
     position: absolute;
     top: 0;
+    width: 0;
+    height: 0;
     border-top: 29px solid transparent;
     border-bottom: 29px solid transparent;
     z-index: -1;
 }
-
 header nav::before {
-    left: -25px;
+    left: -24px;
     border-right: 25px solid #142746;
 }
 
 header nav::after {
-    right: -25px;
+    right: -24px;
     border-left: 25px solid #142746;
 }
-
 
 .logo {
     position: absolute;

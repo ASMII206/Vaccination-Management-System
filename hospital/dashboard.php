@@ -19,7 +19,6 @@ $scheduled = (int)$s['scheduled'];
 $vaccinated = (int)$s['vaccinated'];
 $notVaccinated = (int)$s['not_vaccinated'];
 
-
 $q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND status = 'Approved' AND vaccination_status = 'Pending' AND appointment_date < ?");
 $q->execute([$hid, $today]);
 $needOutcome = (int)$q->fetchColumn();
