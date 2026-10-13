@@ -7,6 +7,61 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const aboutSection = document.querySelector(".about-us");
+
+    if (!aboutSection) return;
+
+    aboutSection.classList.remove("show-animation");
+
+    const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                aboutSection.classList.add("show-animation");
+
+                // Animation ke baad dobara trigger nahi hogi
+                observer.unobserve(aboutSection);
+            }
+        });
+    }, {
+        threshold: 0.15
+    });
+
+    observer.observe(aboutSection);
+});
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const elements = document.querySelectorAll(
+        ".features h2, .cards .card, " +
+        ".faq-section h1, .faq-section > p, " +
+        ".faq-list .faq-item, " +
+        ".contact-info h2, .contact-info li, " +
+        ".contact-wrap > div, " +
+        ".footer-content > div, .footer-bottom"
+    );
+
+    const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+           if (entry.isIntersecting) {
+    entry.target.classList.add("scroll-visible");
+    observer.unobserve(entry.target);
+}
+        });
+    }, {
+        threshold: 0.1
+    });
+
+    elements.forEach(function (element) {
+        observer.observe(element);
+    });
+});
+</script>
+
+
 <body>
     
      <div class="main">

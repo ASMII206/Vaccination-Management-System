@@ -584,7 +584,129 @@ nav a:hover { color: #f9a602; }
     font-size: 15px;
     color: var(--ab-text);
 }
+/* About Section Scroll & Reload Animations */
+/* Slow and Smooth About Animations */
 
+.about-head,
+.about-photo,
+.about-left .about-point,
+.about-right .about-point,
+.about-stats {
+    transition-duration: 1.5s !important;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Heading moves down slowly */
+.about-head {
+    transform: translateY(50px);
+}
+
+/* Center image zooms in slowly */
+.about-photo {
+    transform: scale(0.78);
+}
+
+/* Left content moves from further left */
+.about-left .about-point {
+    transform: translateX(-65px);
+}
+
+/* Right content moves from further right */
+.about-right .about-point {
+    transform: translateX(65px);
+}
+
+/* Stats move up slowly */
+.about-stats {
+    transform: translateY(50px);
+}
+
+/* Slightly more delay between points */
+.about-us.show-animation .about-left .about-point:nth-child(1),
+.about-us.show-animation .about-right .about-point:nth-child(1) {
+    transition-delay: 0.2s;
+}
+
+.about-us.show-animation .about-left .about-point:nth-child(2),
+.about-us.show-animation .about-right .about-point:nth-child(2) {
+    transition-delay: 0.5s;
+}
+
+.about-us.show-animation .about-stats {
+    transition-delay: 0.4s;
+}
+/* Left and right content */
+.about-left .about-point {
+    transform: translateX(-35px);
+}
+
+.about-right .about-point {
+    transform: translateX(35px);
+}
+
+/* Center image */
+.about-photo {
+    transform: scale(0.88);
+}
+
+/* When section becomes visible */
+.about-us.show-animation .about-head,
+.about-us.show-animation .about-photo,
+.about-us.show-animation .about-left .about-point,
+.about-us.show-animation .about-right .about-point,
+.about-us.show-animation .about-stats {
+    opacity: 1;
+    transform: translate(0) scale(1);
+}
+
+/* Staggered animation */
+.about-us.show-animation .about-left .about-point:nth-child(2),
+.about-us.show-animation .about-right .about-point:nth-child(2) {
+    transition-delay: 0.2s;
+}
+
+/* Icon hover */
+.about-icon {
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.about-point:hover .about-icon {
+    transform: translateY(-8px) scale(1.08);
+    box-shadow: 0 12px 28px rgba(47, 111, 237, 0.25);
+}
+
+/* Image hover */
+.about-photo {
+    transition: opacity 0.8s ease, transform 0.8s ease,
+                box-shadow 0.35s ease;
+}
+
+.about-photo:hover {
+    box-shadow: 0 25px 55px rgba(47, 111, 237, 0.22);
+}
+
+/* Stats hover */
+.about-stats {
+    transition: opacity 0.8s ease, transform 0.8s ease,
+                box-shadow 0.35s ease;
+}
+
+.about-stats:hover {
+    box-shadow: 0 16px 38px rgba(47, 111, 237, 0.16);
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .about-head,
+    .about-photo,
+    .about-left .about-point,
+    .about-right .about-point,
+    .about-stats {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
 
 @media (min-width: 993px) {
     .about-left .about-point:nth-child(2)  { margin-right: 60px; }
@@ -1347,4 +1469,83 @@ nav a:hover { color: #f9a602; }
     .card-img img,
     .card-body p,
     .card-body .btn { transition: none; }
+}
+
+
+
+
+/* =====================================
+   SLOW SCROLL REVEAL ANIMATIONS
+   ===================================== */
+
+/* Elements start hidden */
+.features h2,
+.cards .card,
+.faq-section h1,
+.faq-section > p,
+.faq-list .faq-item,
+.contact-info h2,
+.contact-info li,
+.contact-wrap > div,
+.footer-content > div,
+.footer-bottom {
+    opacity: 0;
+    transform: translateY(45px);
+    transition:
+        opacity 1.2s ease,
+        transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Show elements when they enter the screen */
+.features h2.scroll-visible,
+.cards .card.scroll-visible,
+.faq-section h1.scroll-visible,
+.faq-section > p.scroll-visible,
+.faq-list .faq-item.scroll-visible,
+.contact-info h2.scroll-visible,
+.contact-info li.scroll-visible,
+.contact-wrap > div.scroll-visible,
+.footer-content > div.scroll-visible,
+.footer-bottom.scroll-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Cards appear one after another */
+.cards .card:nth-child(2),
+.faq-list .faq-item:nth-child(2),
+.contact-info li:nth-child(2),
+.footer-content > div:nth-child(2) {
+    transition-delay: 0.15s;
+}
+
+.cards .card:nth-child(3),
+.faq-list .faq-item:nth-child(3),
+.contact-info li:nth-child(3),
+.footer-content > div:nth-child(3) {
+    transition-delay: 0.3s;
+}
+
+.cards .card:nth-child(4),
+.faq-list .faq-item:nth-child(4),
+.footer-content > div:nth-child(4) {
+    transition-delay: 0.45s;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .features h2,
+    .cards .card,
+    .faq-section h1,
+    .faq-section > p,
+    .faq-list .faq-item,
+    .contact-info h2,
+    .contact-info li,
+    .contact-wrap > div,
+    .footer-content > div,
+    .footer-bottom {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }
