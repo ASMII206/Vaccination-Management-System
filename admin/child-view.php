@@ -6,7 +6,7 @@ $pageTitle = 'Child Profile';
 $active = 'children.php';
 $id = (int)($_GET['id'] ?? 0);
 
-// Child and parent details
+
 $q = $pdo->prepare(
     'SELECT c.*, p.full_name AS parent_name,
             p.email AS parent_email, p.phone AS parent_phone,
@@ -23,7 +23,7 @@ if (!$child) {
     redirect('children.php');
 }
 
-// Vaccination schedule without v_child_schedule
+
 $q = $pdo->prepare(
     "SELECT
         cv.id,
@@ -70,7 +70,7 @@ $pct = $schedule
     ? round($done / count($schedule) * 100)
     : 0;
 
-// Hospital bookings
+
 $q = $pdo->prepare(
     "SELECT
         a.id,

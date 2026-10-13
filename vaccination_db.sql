@@ -1,9 +1,9 @@
--- =========================================================
--- VaxCare - complete database for a fresh install
--- Import with phpMyAdmin (or: mysql -u root < vaccination_db.sql)
--- Admin login (set in includes/config.php):
---   admin@vaxcare.com / admin12345
--- =========================================================
+
+
+
+
+
+
 
 CREATE DATABASE IF NOT EXISTS `vaccination_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `vaccination_db`;
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   CONSTRAINT `fk_appt_hospital` FOREIGN KEY (`hospital_id`) REFERENCES `hospitals` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- One row per child + vaccine, with the state used by the parent, hospital and admin portals
+
 CREATE OR REPLACE VIEW `v_child_schedule` AS
 SELECT cv.id AS id,
        cv.child_id AS child_id,
@@ -107,7 +107,7 @@ FROM child_vaccinations cv
 JOIN children c ON c.id = cv.child_id
 JOIN vaccines v ON v.id = cv.vaccine_id;
 
--- Vaccines (the due date of each dose = date of birth + age_in_days)
+
 INSERT IGNORE INTO `vaccines` (`id`, `name`, `description`, `age_in_days`, `availability`) VALUES
 (1, 'BCG', 'Tuberculosis - at birth', 0, 'Available'),
 (2, 'Hepatitis B (Birth dose)', 'Hepatitis B - at birth', 0, 'Available'),

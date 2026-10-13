@@ -1,4 +1,4 @@
-// Mobile menu toggle (landing page)
+
 var menuToggle = document.getElementById("menuToggle");
 var header = document.querySelector("header");
 

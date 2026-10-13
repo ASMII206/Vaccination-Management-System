@@ -15,7 +15,7 @@ $search = trim($_GET['q'] ?? '');
 $from = clean_date($_GET['from'] ?? '');
 $to = clean_date($_GET['to'] ?? '');
 
-/* ---- Due dates of every child: no database view required ---- */
+
 $sql = "
     SELECT
         cv.id,
@@ -92,7 +92,7 @@ $q = $pdo->prepare($sql);
 $q->execute($params);
 $due = $q->fetchAll();
 
-/* ---- Date and time of booked vaccinations ---- */
+
 $sql = "
     SELECT
         a.id,

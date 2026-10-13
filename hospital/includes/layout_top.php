@@ -1,5 +1,5 @@
 <?php
-// Shared top of every hospital page. Expects $pageTitle, $pageSub, $active (+ bootstrap.php already loaded)
+
 $q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND status = 'Approved' AND vaccination_status = 'Pending'");
 $q->execute([$hid]);
 $scheduledCount = (int)$q->fetchColumn();

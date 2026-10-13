@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->execute([$new['name'], $new['dob'], $new['gender'] ?: null, $new['blood_group'] ?: null, $new['notes'] ?: null, $id, $pid]);
 
         if ($new['dob'] !== $child['dob']) {
-            // Date of birth changed: recalculate every due date
+            
             $pdo->prepare('UPDATE child_vaccinations cv JOIN vaccines v ON v.id = cv.vaccine_id
                            SET cv.due_date = DATE_ADD(?, INTERVAL v.age_in_days DAY) WHERE cv.child_id = ?')
                 ->execute([$new['dob'], $id]);

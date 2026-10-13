@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $pageTitle = 'List of Hospitals';
 $active = 'hospitals.php';
 
-/* ---- delete ---- */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $id = (int)($_POST['id'] ?? 0);

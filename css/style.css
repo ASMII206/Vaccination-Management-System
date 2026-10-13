@@ -1,23 +1,23 @@
-/* =========================================================
-   VAXCARE – style.css  (clean, consolidated)
-   Each selector is defined once. Media queries only change
-   what actually differs at that screen size.
-
-   Breakpoints used:
-   1100px  navbar -> hamburger
-   992px   hero + about go to tablet layout
-   950px   footer tablet
-   900px   feature cards (hover reveal off / 2 columns)
-   850px   contact stacks
-   750px   contact cards stack
-   600px   phones
-   480px   small phones
-========================================================= */
 
 
-/* =========================
-   RESET / GLOBAL
-========================= */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 * {
     margin: 0;
     padding: 0;
@@ -35,13 +35,13 @@ body {
 
 img { max-width: 100%; }
 
-/* keeps section titles from hiding under the fixed header */
+
 section[id] { scroll-margin-top: 80px; }
 
 
-/* =========================================================
-   HEADER / NAVBAR
-========================================================= */
+
+
+
 header {
     position: fixed;
     top: 0;
@@ -61,7 +61,7 @@ header {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ---- ribbon ---- */
+
 header nav {
     position: relative;
     width: 82%;
@@ -95,7 +95,7 @@ header nav::after {
     border-left: 25px solid #142746;
 }
 
-/* ---- logo ---- */
+
 .logo {
     position: absolute;
     left: 6%;
@@ -114,7 +114,7 @@ header nav::after {
     object-fit: contain;
 }
 
-/* ---- links ---- */
+
 nav a {
     position: relative;
     color: #ffffff;
@@ -133,7 +133,7 @@ nav a:hover { color: #f9a602; }
     gap: 24px;
 }
 
-/* ---- login / register ---- */
+
 .btns {
     display: flex;
     align-items: center;
@@ -168,7 +168,7 @@ nav a:hover { color: #f9a602; }
     transform: translateY(-2px);
 }
 
-/* ---- hamburger button (hidden on desktop) ---- */
+
 .menu-toggle {
     display: none;
     background: transparent;
@@ -188,7 +188,7 @@ nav a:hover { color: #f9a602; }
     transition: all 0.3s ease;
 }
 
-/* ---- desktop only: animated underline on hover ---- */
+
 @media (min-width: 1101px) {
     nav a:not(.login-btn):not(.register-btn)::after {
         content: "";
@@ -204,7 +204,7 @@ nav a:hover { color: #f9a602; }
     nav a:not(.login-btn):not(.register-btn):hover::after { width: 100%; }
 }
 
-/* ---- small laptops: tighten so everything fits ---- */
+
 @media (min-width: 1101px) and (max-width: 1280px) {
     nav a { font-size: 13px; }
     .links { gap: 18px; }
@@ -212,7 +212,7 @@ nav a:hover { color: #f9a602; }
     .register-btn { padding: 8px 14px; }
 }
 
-/* ---- tablet + mobile: hamburger menu ---- */
+
 @media (max-width: 1100px) {
 
     header {
@@ -251,7 +251,7 @@ nav a:hover { color: #f9a602; }
         gap: 20px;
         border-top: 1px solid rgba(255, 255, 255, 0.15);
 
-        /* hidden until header gets .nav-open (script.js) */
+        
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -294,7 +294,7 @@ nav a:hover { color: #f9a602; }
         font-size: 13px;
     }
 
-    /* hamburger -> X */
+    
     header.nav-open .menu-toggle span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
     header.nav-open .menu-toggle span:nth-child(2) { opacity: 0; }
     header.nav-open .menu-toggle span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
@@ -312,9 +312,9 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   HERO
-========================================================= */
+
+
+
 .hero {
     position: relative;
     width: 100%;
@@ -324,7 +324,7 @@ nav a:hover { color: #f9a602; }
     overflow: hidden;
 }
 
-/* blurred background image */
+
 .hero::before {
     content: "";
     position: absolute;
@@ -338,7 +338,7 @@ nav a:hover { color: #f9a602; }
     animation: heroZoom 12s ease-in-out infinite alternate;
 }
 
-/* dark overlay so the white text is readable */
+
 .hero::after {
     content: "";
     position: absolute;
@@ -443,7 +443,7 @@ nav a:hover { color: #f9a602; }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* tablet + mobile: centered text */
+
 @media (max-width: 992px) {
     .hero { min-height: 600px; }
 
@@ -478,9 +478,9 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   ABOUT
-========================================================= */
+
+
+
 .about-us {
     --ab-navy: #0d0b3e;
     --ab-text: #4a4d63;
@@ -510,7 +510,7 @@ nav a:hover { color: #f9a602; }
     color: var(--ab-text);
 }
 
-/* 3-column layout: left points | photo | right points */
+
 .about-grid {
     max-width: 1200px;
     margin: 0 auto;
@@ -557,7 +557,7 @@ nav a:hover { color: #f9a602; }
     color: var(--ab-navy);
 }
 
-/* circular photo with white ring */
+
 .about-photo {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -575,7 +575,7 @@ nav a:hover { color: #f9a602; }
     border-radius: 50%;
 }
 
-/* stats card */
+
 .about-stats {
     max-width: 900px;
     margin: 60px auto 0;
@@ -600,13 +600,13 @@ nav a:hover { color: #f9a602; }
     color: var(--ab-text);
 }
 
-/* staggered look – desktop only */
+
 @media (min-width: 993px) {
     .about-left .about-point:nth-child(2)  { margin-right: 60px; }
     .about-right .about-point:nth-child(2) { margin-left: 60px; }
 }
 
-/* tablet: photo on top, points in a row */
+
 @media (max-width: 992px) {
     .about-grid {
         grid-template-columns: 1fr;
@@ -632,7 +632,7 @@ nav a:hover { color: #f9a602; }
     }
 }
 
-/* phone: everything stacked */
+
 @media (max-width: 600px) {
     .about-us { padding: 60px 16px 40px; }
 
@@ -653,11 +653,11 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   FEATURE CARDS
-   Mobile / touch: description + button always visible.
-   Desktop with a mouse: revealed on hover or keyboard focus.
-========================================================= */
+
+
+
+
+
 .features {
     position: relative;
     padding: 80px 20px 90px;
@@ -741,7 +741,7 @@ nav a:hover { color: #f9a602; }
     transition: 0.3s;
 }
 
-/* hover-reveal only where hover exists AND the screen is wide */
+
 @media (hover: hover) and (min-width: 901px) {
 
     .card-body p {
@@ -783,7 +783,7 @@ nav a:hover { color: #f9a602; }
     }
 }
 
-/* tablet: 2 columns, third card centered */
+
 @media (min-width: 601px) and (max-width: 900px) {
     .cards { grid-template-columns: repeat(2, 1fr); }
 
@@ -794,7 +794,7 @@ nav a:hover { color: #f9a602; }
     }
 }
 
-/* phone: 1 column */
+
 @media (max-width: 600px) {
     .features { padding: 56px 16px 64px; }
 
@@ -807,9 +807,9 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   FAQ
-========================================================= */
+
+
+
 .faq-section { padding: 60px 5% 70px; }
 
 .faq-section h1 {
@@ -900,12 +900,12 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   CONTACT
-========================================================= */
+
+
+
 .contact-section { padding: 80px 7% 100px; }
 
-/* ---- info cards (schedule / location / mail) ---- */
+
 .contact-info {
     max-width: 1100px;
     margin: 0 auto 40px;
@@ -975,7 +975,7 @@ nav a:hover { color: #f9a602; }
 
 .contact-info li:hover strong { color: #f9a602; }
 
-/* orange bottom line */
+
 .contact-info li::after {
     content: "";
     position: absolute;
@@ -989,7 +989,7 @@ nav a:hover { color: #f9a602; }
 
 .contact-info li:hover::after { width: 100%; }
 
-/* ---- image + form ---- */
+
 .contact-wrap {
     max-width: 1100px;
     margin: 0 auto;
@@ -1107,9 +1107,9 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   FOOTER
-========================================================= */
+
+
+
 .vax-footer {
     position: relative;
     width: 100%;
@@ -1123,7 +1123,7 @@ nav a:hover { color: #f9a602; }
     overflow: hidden;
 }
 
-/* white curve on top */
+
 .vax-footer::before {
     content: "";
     position: absolute;
@@ -1250,7 +1250,7 @@ nav a:hover { color: #f9a602; }
 
 .footer-bottom p { font-size: 12px; }
 
-/* desktop: ACCOUNT in column 4, FOLLOW US directly below it */
+
 @media (min-width: 951px) {
     .footer-column:nth-child(4) {
         grid-column: 4;
@@ -1264,7 +1264,7 @@ nav a:hover { color: #f9a602; }
     }
 }
 
-/* tablet: 2 columns, FOLLOW US under ACCOUNT */
+
 @media (min-width: 601px) and (max-width: 950px) {
     .footer-content {
         grid-template-columns: 1fr 1fr;
@@ -1276,7 +1276,7 @@ nav a:hover { color: #f9a602; }
     .footer-social { grid-column: 2; }
 }
 
-/* phone: single centered column */
+
 @media (max-width: 600px) {
     .vax-footer::before {
         top: -35px;
@@ -1346,9 +1346,9 @@ nav a:hover { color: #f9a602; }
 }
 
 
-/* =========================================================
-   REDUCED MOTION
-========================================================= */
+
+
+
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
 

@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('appointments.php');
 csrf_check();
 
-// Where to return to (keeps the search / tab the hospital was on)
+
 $ret = array_filter([
     'q'      => trim($_POST['ret_q'] ?? ''),
     'status' => $_POST['ret_status'] ?? '',
@@ -24,7 +24,7 @@ if (mb_strlen($remarks) > 255) {
     redirect($back);
 }
 
-// The appointment must belong to this hospital and be approved by the administrator
+
 $q = $pdo->prepare("SELECT id, child_vaccination_id FROM appointments WHERE id = ? AND hospital_id = ? AND status = 'Approved'");
 $q->execute([$id, $hid]);
 $appt = $q->fetch();
@@ -33,7 +33,7 @@ if (!$appt) {
     redirect($back);
 }
 
-// The same dose must not be recorded as vaccinated twice
+
 if ($status === 'Vaccinated') {
     $q = $pdo->prepare("SELECT 1 FROM appointments WHERE child_vaccination_id = ? AND vaccination_status = 'Vaccinated' AND id <> ? LIMIT 1");
     $q->execute([$appt['child_vaccination_id'], $id]);

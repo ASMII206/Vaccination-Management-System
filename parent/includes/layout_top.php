@@ -1,5 +1,5 @@
 <?php
-// Shared top part of every parent page. Expects $pageTitle and $active.
+
 $nav = [
     'dashboard.php'     => ['Dashboard',         'fa-gauge'],
     'children.php'      => ['My Children',       'fa-child'],

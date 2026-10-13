@@ -15,7 +15,7 @@ radial-gradient(circle at 85% 85%, rgba(48, 104, 170, 0.22), transparent 35%),
 color: #ffffff;
 }
 
-/* Login Section */
+
 
 .login-section {
 min-height: 100vh;
@@ -27,7 +27,7 @@ overflow: hidden;
 position: relative;
 }
 
-/* Background Decorative Circles */
+
 
 .login-section::before,
 .login-section::after {
@@ -56,7 +56,7 @@ border: 2px solid rgba(255, 255, 255, 0.13);
 animation-delay: -3s;
 }
 
-/* Login Card */
+
 
 .box {
 width: 100%;
@@ -85,7 +85,7 @@ box-shadow:
 0 0 25px rgba(249, 166, 2, 0.13);
 }
 
-/* Heading */
+
 
 .box h2 {
 text-align: center;
@@ -114,7 +114,7 @@ line-height: 1.6;
 margin-bottom: 28px;
 }
 
-/* Labels */
+
 
 #loginForm label {
 display: block;
@@ -124,7 +124,7 @@ font-size: 14px;
 font-weight: 600;
 }
 
-/* Email and Password Fields */
+
 
 #loginForm input {
 display: block;
@@ -159,7 +159,7 @@ background: #142746;
 box-shadow: 0 0 0 3px rgba(249, 166, 2, 0.15);
 }
 
-/* Error Message */
+
 
 .error {
 min-height: 18px;
@@ -169,7 +169,7 @@ font-size: 13px;
 line-height: 1.5;
 }
 
-/* Login Button */
+
 
 .btn {
 width: 100%;
@@ -201,7 +201,7 @@ box-shadow: 0 10px 25px rgba(249, 166, 2, 0.32);
 transform: scale(0.98);
 }
 
-/* Back to Home */
+
 
 .hint {
 margin-top: 24px;
@@ -222,7 +222,7 @@ color: #F9A602;
 transform: translateX(-3px);
 }
 
-/* Animations */
+
 
 @keyframes cardEntrance {
 from {
@@ -244,7 +244,7 @@ transform: translateY(-18px);
 }
 }
 
-/* Responsive Design */
+
 
 @media (max-width: 480px) {
 .login-section {
@@ -287,7 +287,7 @@ transition-duration: 0.01ms !important;
 }
 
 
-/* Success message (shown after registration) */
+
 .success {
 margin-top: 12px;
 color: #7ddc9a;

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 
-// Already signed in? Go straight to the right portal.
+
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
     redirect('../' . $url);
 }
@@ -9,11 +9,11 @@ if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
 $fields = ['role', 'name', 'email', 'phone', 'address', 'location', 'child_name', 'child_dob', 'hospital', 'vaccine_date'];
 $old = array_fill_keys($fields, '');
 if (isset($_GET['role']) && in_array($_GET['role'], ['parent', 'hospital'], true)) {
-    $old['role'] = $_GET['role'];          // landing-page buttons pre-select the role
+    $old['role'] = $_GET['role'];          
 }
 $errors = [];
 
-// Hospital names for the "Search hospital" suggestions
+
 $hospitalList = $pdo->query('SELECT name FROM hospitals ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
 
 function valid_date($d) {
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($old['address'] === '' || mb_strlen($old['address']) > 255) $errors[] = 'Address is required.';
     if (empty($_POST['terms'])) $errors[] = 'Please accept the terms of service and privacy policy.';
 
-    // Email must be unique across admin, parents and hospitals
+    
     if ($emailOk) {
         $taken = hash_equals(ADMIN_EMAIL, $old['email']);
         if (!$taken) {
@@ -55,19 +55,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $q = $pdo->prepare('SELECT 1 FROM hospitals WHERE email = ?');
                 $q->execute([$old['email']]);
                 $taken = (bool)$q->fetchColumn();
-            } catch (PDOException $ex) { /* hospital email column not installed yet */ }
+            } catch (PDOException $ex) {  }
         }
         if ($taken) $errors[] = 'This email address is already registered.';
     }
 
     if ($role === 'parent') {
-        // Optional: first child
+        
         $hasChild = ($old['child_name'] !== '' || $old['child_dob'] !== '');
         if ($hasChild) {
             if (mb_strlen($old['child_name']) < 2 || mb_strlen($old['child_name']) > 100) $errors[] = "Enter your child's name.";
             if (!valid_date($old['child_dob']) || $old['child_dob'] > $today) $errors[] = "Enter a valid date of birth for your child (not in the future).";
         }
-        // Optional: first booking request
+        
         if ($old['hospital'] !== '' || $old['vaccine_date'] !== '') {
             if (!$hasChild) {
                 $errors[] = "Add your child's name and date of birth to request a vaccination booking.";
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     generate_schedule($pdo, $childId, $old['child_dob']);
 
                     if ($hospitalId) {
-                        // Booking request for the child's next available vaccine
+                        
                         
 $q = $pdo->prepare("
     SELECT cv.id
@@ -179,9 +179,9 @@ $cvId = $q->fetchColumn();
           <?= csrf_field() ?>
 
 
-          <!-- =========================
-               FORM HEADER
-          ========================== -->
+          
+
+
 
           <div class="form-header mb-4">
             <h2 class="form-title">REGISTER</h2>
@@ -196,9 +196,9 @@ $cvId = $q->fetchColumn();
           <?php endif; ?>
 
 
-          <!-- =========================
-               ROLE
-          ========================== -->
+          
+
+
 
       <div class="mb-3">
 
@@ -237,14 +237,14 @@ $cvId = $q->fetchColumn();
       </div>
 
 
-      <!-- =========================
-           FORM FIELDS
-      ========================== -->
+      
+
+
 
       <div class="row g-3">
 
 
-        <!-- Name -->
+        
 
         <div class="col-12 col-md-6">
 
@@ -268,7 +268,7 @@ $cvId = $q->fetchColumn();
         </div>
 
 
-        <!-- Email -->
+        
 
         <div class="col-12 col-md-6">
 
@@ -291,7 +291,7 @@ $cvId = $q->fetchColumn();
         </div>
 
 
-        <!-- Password -->
+        
 
         <div class="col-12 col-md-6">
 
@@ -314,7 +314,7 @@ $cvId = $q->fetchColumn();
         </div>
 
 
-        <!-- Confirm Password -->
+        
 
         <div class="col-12 col-md-6">
 
@@ -336,7 +336,7 @@ $cvId = $q->fetchColumn();
         </div>
 
 
-        <!-- Phone -->
+        
 
         <div class="col-12 col-md-6">
 
@@ -361,7 +361,7 @@ $cvId = $q->fetchColumn();
         </div>
 
 
-        <!-- Address -->
+        
 
         <div class="col-12 col-md-6" id="addressGroup">
 
@@ -384,7 +384,7 @@ $cvId = $q->fetchColumn();
         </div>
 
 
-        <!-- Location (Hospital only) -->
+        
 
         <div
           class="col-12 col-md-6 d-none"
@@ -411,7 +411,7 @@ $cvId = $q->fetchColumn();
 
 
 
-        <!-- Parent only: child details + hospital booking -->
+        
 
         <div class="col-12 col-md-6 d-none parent-only">
           <label for="child_name" class="form-label">Child Name</label>
@@ -439,9 +439,9 @@ $cvId = $q->fetchColumn();
       </div>
 
 
-      <!-- =========================
-           TERMS
-      ========================== -->
+      
+
+
 
       <div class="form-check mt-4 mb-4">
 
@@ -463,9 +463,9 @@ $cvId = $q->fetchColumn();
       </div>
 
 
-      <!-- =========================
-           SUBMIT
-      ========================== -->
+      
+
+
 
       <button
         type="submit"
@@ -475,9 +475,9 @@ $cvId = $q->fetchColumn();
       </button>
 
 
-      <!-- =========================
-           LOGIN
-      ========================== -->
+      
+
+
 
       <p class="login">
 

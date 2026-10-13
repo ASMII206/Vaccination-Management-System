@@ -8,7 +8,7 @@ $pid = parent_id();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
-    // A parent can only cancel their own request while it is still pending
+    
     $st = $pdo->prepare("UPDATE appointments SET status = 'Cancelled' WHERE id = ? AND parent_id = ? AND status = 'Pending'");
     $st->execute([(int)($_POST['id'] ?? 0), $pid]);
     if ($st->rowCount()) flash('success', 'Request cancelled.');

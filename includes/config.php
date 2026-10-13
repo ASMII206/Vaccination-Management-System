@@ -11,9 +11,9 @@ define('DB_NAME', 'if0_43146506_vaccination_db');
 define('DB_USER', 'if0_43146506');
 define('DB_PASS', 'eprojectphp');
 
-/* Admin account (checked on the server, never in the browser).
-   Email:    admin@vaxcare.com
-   Password: admin12345            */
+
+
+
 define('ADMIN_EMAIL', 'admin@vaxcare.com');
 define('ADMIN_PASSWORD_HASH', '$2b$10$8Vt/SUJDTAf6h/O1gUHfHeopu0G/2zMQf1Dxc/rtcyDCLYcmKPoaG');
 
@@ -27,7 +27,7 @@ try {
     die('Database connection failed. Start MySQL and import database/vaccination_db.sql, then check includes/config.php.');
 }
 
-/* ---------- generic helpers ---------- */
+
 
 function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
@@ -49,9 +49,9 @@ function csrf_check() {
     if (!csrf_valid()) { http_response_code(400); die('Invalid request. Please go back and try again.'); }
 }
 
-/* ---------- role / session helpers ---------- */
 
-// Where each role lands after login (relative to the project root).
+
+
 function portal_url($role) {
     $map = [
         'parent'   => 'parent/dashboard.php',
@@ -76,7 +76,7 @@ function require_hospital() {
 }
 function hospital_id() { return (int)($_SESSION['user_id'] ?? 0); }
 
-// Does a column exist? (lets pages keep working if an optional migration has not been run yet)
+
 function has_column(PDO $pdo, $table, $column) {
     static $cache = [];
     $key = $table . '.' . $column;
@@ -88,7 +88,7 @@ function has_column(PDO $pdo, $table, $column) {
     return $cache[$key];
 }
 
-/* ---------- vaccination helpers ---------- */
+
 
 function fmt_date($d) { return $d ? date('d M Y', strtotime($d)) : '-'; }
 
@@ -113,7 +113,7 @@ function badge($text) {
     return '<span class="badge ' . ($map[$text] ?? 'grey') . '">' . e($text) . '</span>';
 }
 
-// Create a child's vaccination schedule from their date of birth
+
 function generate_schedule(PDO $pdo, $childId, $dob) {
     $vaccines = $pdo->query('SELECT id, age_in_days FROM vaccines')->fetchAll();
     $ins = $pdo->prepare('INSERT IGNORE INTO child_vaccinations (child_id, vaccine_id, due_date) VALUES (?,?,?)');

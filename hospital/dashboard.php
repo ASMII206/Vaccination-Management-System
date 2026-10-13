@@ -6,7 +6,7 @@ $pageSub = 'Overview of appointments assigned to your hospital';
 $active = 'dashboard.php';
 $today = date('Y-m-d');
 
-// Counts (only bookings the administrator has approved)
+
 $q = $pdo->prepare("SELECT COUNT(*) AS total,
         COALESCE(SUM(vaccination_status = 'Pending'), 0) AS scheduled,
         COALESCE(SUM(vaccination_status = 'Vaccinated'), 0) AS vaccinated,
@@ -19,12 +19,12 @@ $scheduled = (int)$s['scheduled'];
 $vaccinated = (int)$s['vaccinated'];
 $notVaccinated = (int)$s['not_vaccinated'];
 
-// Scheduled appointments whose date has already passed (outcome still missing)
+
 $q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND status = 'Approved' AND vaccination_status = 'Pending' AND appointment_date < ?");
 $q->execute([$hid, $today]);
 $needOutcome = (int)$q->fetchColumn();
 
-// Next appointments
+
 $q = $pdo->prepare("SELECT a.id, a.appointment_date, a.time_slot, c.name AS child_name, v.name AS vaccine_name
     FROM appointments a
     JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id

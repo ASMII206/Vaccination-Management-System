@@ -1,4 +1,4 @@
-// Parent portal: mobile sidebar toggle
+
 (function () {
     var shell = document.querySelector(".p-shell");
     var burger = document.getElementById("pToggle");

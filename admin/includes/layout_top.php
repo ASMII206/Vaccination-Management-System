@@ -1,5 +1,5 @@
 <?php
-// Shared top of every admin page. Expects $pageTitle and $active.
+
 $nav = [
     'dashboard.php'  => ['Dashboard',          'fa-gauge'],
     'children.php'   => ['All Children',       'fa-child'],

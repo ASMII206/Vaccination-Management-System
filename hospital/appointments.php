@@ -28,7 +28,7 @@ if ($filter !== '') {
     $params[] = $filter === 'Scheduled' ? 'Pending' : $filter;
 }
 if ($search !== '') {
-    // A reference such as "VMS-0007" (or just "7") finds that appointment
+    
     $refId = preg_match('/^(?:vms-?)?0*(\d+)$/i', $search, $m) ? (int)$m[1] : 0;
     $sql .= ' AND (c.name LIKE ? OR p.full_name LIKE ? OR v.name LIKE ? OR a.id = ?)';
     $like = '%' . $search . '%';
@@ -40,7 +40,7 @@ $q = $pdo->prepare($sql);
 $q->execute($params);
 $rows = $q->fetchAll();
 
-// Keeps the search text when switching tabs
+
 function tab_link($status, $search) {
     $qs = array_filter(['q' => $search, 'status' => $status], function ($v) { return $v !== ''; });
     return 'appointments.php' . ($qs ? '?' . http_build_query($qs) : '');
@@ -103,7 +103,7 @@ include __DIR__ . '/includes/layout_top.php';
 </div>
 
 <?php ob_start(); ?>
-<!-- Update status dialog: one dialog shared by every appointment button -->
+
 <div class="ov" id="statusModal">
   <form class="mod" method="post" action="update_status.php" role="dialog" aria-modal="true" aria-label="Update vaccination status">
     <?= csrf_field() ?>

@@ -10,7 +10,7 @@ $q = $pdo->prepare('SELECT * FROM children WHERE parent_id = ? ORDER BY name');
 $q->execute([$pid]);
 $children = $q->fetchAll();
 
-// Completed vaccinations, grouped by child
+
 $q = $pdo->prepare("SELECT a.appointment_date, h.name AS hospital, cv.child_id, v.name AS vaccine_name
     FROM appointments a
     JOIN hospitals h ON h.id = a.hospital_id

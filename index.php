@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Navbar -->
+    
      <div class="main">
     <header>
         <div class="logo">
@@ -63,7 +63,7 @@
 
   <div class="about-grid">
 
-    <!-- LEFT -->
+    
     <div class="about-col about-left">
       <div class="about-point">
         <span class="about-icon"><i class="fa-solid fa-notes-medical " style="color: #e08f00"></i></span>
@@ -77,12 +77,12 @@
       </div>
     </div>
 
-    <!-- CENTER IMAGE -->
+    
     <div class="about-photo">
       <img src="images/baby.jpg" alt="VaxCare vaccination care">
     </div>
 
-    <!-- RIGHT -->
+    
     <div class="about-col about-right">
       <div class="about-point">
         <span class="about-icon"><i class="fa-solid fa-hospital"style="color: #e08f00"></i></span>
@@ -98,7 +98,7 @@
 
   </div>
 
-  <!-- STATS -->
+  
   <div class="about-stats">
     <div><h3>500+</h3><p>Vaccinations</p></div>
     <div><h3>25+</h3><p>Vaccine Types</p></div>
@@ -176,7 +176,7 @@
         </div>
     </section>
     <?php
-// Contact form handling (server-side validation)
+
 $name = $email = $message = '';
 $status = '';
 $error  = '';
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
     } else {
-        // TODO: save to database (includes/config.php) or send with mail()
+        
         $status = 'Thank you! Your message has been sent.';
         $name = $email = $message = '';
     }
@@ -239,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="footer-content">
 
-        <!-- LOGO -->
+        
         <div class="footer-brand">
 
             <img src="images/final bg logo.png"
@@ -250,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
 
-        <!-- QUICK LINKS -->
+        
         <div class="footer-column">
 
             <h3>QUICK LINKS</h3>
@@ -264,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
 
-        <!-- VACCINES -->
+        
         <div class="footer-column vaccines-column">
 
             <h3>VACCINES</h3>

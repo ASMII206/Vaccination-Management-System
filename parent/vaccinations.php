@@ -14,7 +14,7 @@ $q = $pdo->prepare(
 $q->execute([$pid]);
 $children = $q->fetchAll();
 
-// Direct SQL query: no v_child_schedule view required
+
 $sql = "
     SELECT
         cv.id,
@@ -53,7 +53,7 @@ $sql = "
 
 $params = [$pid];
 
-// Filter only children belonging to the logged-in parent
+
 if ($childFilter) {
     $sql .= ' AND cv.child_id = ?';
     $params[] = $childFilter;

@@ -2,7 +2,7 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 
-// Redirect already signed-in users to their respective portals.
+
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
     redirect('../' . $url);
 }
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($email === '' || $password === '') {
         $error = 'Please enter your email and password.';
     } else {
-        // 1. Admin login
+        
         if (
             hash_equals(ADMIN_EMAIL, $email) &&
             password_verify($password, ADMIN_PASSWORD_HASH)
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
         }
 
-        // 2. Parent login
+        
         if (!$account) {
             $q = $pdo->prepare(
                 'SELECT id, full_name, password_hash
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // 3. Hospital login
+        
         if (!$account) {
             try {
                 $q = $pdo->prepare(
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ];
                 }
             } catch (PDOException $ex) {
-                // Hospital login columns may not be installed yet.
+                
             }
         }
 

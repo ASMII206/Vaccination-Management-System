@@ -17,7 +17,7 @@ $hospitals = $pdo->query('SELECT id, name FROM hospitals ORDER BY name')->fetchA
 
 $hasRemarks = has_column($pdo, 'appointments', 'remarks');
 
-// Date-wise report of child / vaccination (approved bookings only)
+
 $sql = "SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status, " . ($hasRemarks ? 'a.remarks' : 'NULL') . " AS remarks,
                c.id AS child_id, c.name AS child_name, c.dob, v.name AS vaccine_name, h.name AS hospital, p.full_name AS parent_name
         FROM appointments a
@@ -59,7 +59,7 @@ foreach ($rows as $r) {
 }
 
 
- // Overall progress of every child — no database view required
+ 
 $progress = $pdo->query("
     SELECT
         c.id,

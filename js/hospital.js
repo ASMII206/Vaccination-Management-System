@@ -1,4 +1,4 @@
-// Hospital portal: the shared "Update status" dialog on the Appointments page
+
 (function () {
     var modal = document.getElementById("statusModal");
     if (!modal) return;

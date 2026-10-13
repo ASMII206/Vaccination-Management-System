@@ -12,8 +12,8 @@ if (!in_array($gender, ['Male', 'Female', 'Other'], true)) {
     $gender = '';
 }
 
-// Children list with vaccination progress.
-// No dependency on v_child_schedule.
+
+
 $sql = "
     SELECT
         c.*,

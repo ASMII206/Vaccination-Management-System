@@ -6,7 +6,7 @@ $pageSub = 'Keep your hospital details up to date';
 $active = 'profile.php';
 $errors = [];
 $errorsPw = [];
-$form = $hospital;   // what the form shows (typed values if validation fails)
+$form = $hospital;   
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Hospital profile updated.');
             redirect('profile.php');
         }
-        // show what was typed, together with the errors
+        
         $form['name'] = $name;
         $form['address'] = $address;
         $form['location'] = $location;

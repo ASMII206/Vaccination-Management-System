@@ -1,4 +1,4 @@
-// Register page: show the right fields for the selected role
+
 (function () {
     var role = document.getElementById("role");
     if (!role) return;
@@ -20,12 +20,12 @@
 
         nameLabel.textContent = isHospital ? "Hospital Name" : (isParent ? "Parent Name" : "Name");
 
-        // Hospital only: location
+        
         locationGroup.classList.toggle("d-none", !isHospital);
         locationInput.disabled = !isHospital;
         locationInput.required = isHospital;
 
-        // Parent only: child details + first booking
+        
         parentFields.forEach(function (box) {
             box.classList.toggle("d-none", !isParent);
             setDisabled(box, !isParent);

@@ -9,7 +9,7 @@ if (!in_array($filter, ['Pending', 'Approved', 'Rejected', 'Cancelled', 'All'], 
 $search = trim($_GET['q'] ?? '');
 $back = 'requests.php' . qs(['status' => $filter, 'q' => $search]);
 
-/* ---- approve / reject ---- */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $id = (int)($_POST['id'] ?? 0);

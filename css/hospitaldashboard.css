@@ -8,7 +8,7 @@ body {
     margin: 0;
 }
 
-/* Dashboard Layout */
+
 .app {
     display: grid;
     grid-template-columns: 40px minmax(0, 1fr);
@@ -42,7 +42,7 @@ body {
     width: 248px;
 }
 
-/* Sidebar Navigation */
+
 
 .brand {
     display: flex;
@@ -128,7 +128,7 @@ body {
     background: rgba(255, 255, 255, 0.08);
 }
 
-/* Main Dashboard */
+
 
 .main {
     padding: 32px 40px 48px;
@@ -160,7 +160,7 @@ body {
     color: rgba(20, 37, 66, 0.68);
 }
 
-/* Dashboard Statistics */
+
 
 .strip {
     display: grid;
@@ -218,7 +218,7 @@ body {
     border: 2px solid #142542;
 }
 
-/* Dashboard Panels */
+
 
 .cols {
     display: grid;
@@ -245,7 +245,7 @@ body {
     margin-bottom: 14px;
 }
 
-/* Upcoming Vaccinations */
+
 
 .up {
     display: grid;
@@ -285,7 +285,7 @@ body {
     font-size: 12.5px;
 }
 
-/* Vaccine Availability */
+
 
 .bar {
     display: flex;
@@ -333,7 +333,7 @@ body {
     color: #000000;
 }
 
-/* Tables */
+
 
 .tb {
     display: flex;
@@ -437,7 +437,7 @@ td small {
     padding: 40px 16px;
 }
 
-/* Buttons */
+
 
 .btn {
     background: #FFA812;
@@ -465,7 +465,7 @@ td small {
     font-size: 12.5px;
 }
 
-/* Profile Section */
+
 
 .prof {
     max-width: 640px;
@@ -478,7 +478,7 @@ td small {
     margin-top: 22px;
 }
 
-/* Responsive Dashboard */
+
 
 @media (max-width: 900px) {
     .app {
@@ -567,16 +567,16 @@ td small {
         grid-template-columns: 46px 1fr;
     }
 }
-/* =========================================================
-   Additions for the working Appointments / Profile pages
-   (same palette: navy #142542, amber #FFA812)
-========================================================= */
+
+
+
+
 
 .dm {
     background: #8f9bb0;
 }
 
-/* Flash messages */
+
 .alert {
     padding: 12px 16px;
     border-radius: 8px;
@@ -588,7 +588,7 @@ td small {
 .alert.success { background: #e6f6ec; border-color: #bfe5cd; color: #1d6b3f; }
 .alert.error { background: #fdeaea; border-color: #f3c1c1; color: #a12d2d; }
 
-/* Note on the dashboard */
+
 .note {
     background: rgba(255, 168, 18, 0.14);
     border-left: 3px solid #FFA812;
@@ -599,7 +599,7 @@ td small {
 }
 .note a { color: #142542; font-weight: 800; }
 
-/* Search + status tabs */
+
 .tb form { flex: 1 1 260px; }
 
 .seg {
@@ -622,7 +622,7 @@ td small {
 .seg a:hover { background: rgba(20, 37, 66, 0.045); color: #142542; }
 .seg a.on { background: #142542; color: #FFFFFF; }
 
-/* Date tags in the appointments table */
+
 .tg {
     font-style: normal;
     display: inline-block;
@@ -636,7 +636,7 @@ td small {
 }
 .tg.od { background: #fdeaea; color: #a12d2d; }
 
-/* Update status dialog */
+
 .ov {
     position: fixed;
     inset: 0;
@@ -684,7 +684,7 @@ td small {
     margin-top: 18px;
 }
 
-/* Form labels and layout (modal + profile) */
+
 .mod label:not(.opt),
 .pan label {
     display: block;
@@ -708,12 +708,12 @@ td small {
     .seg a { padding: 9px 10px; }
 }
 
-/* Small layout fixes */
-.side { box-sizing: border-box; }          /* sidebar was 48px taller than the screen, hiding "Sign out" */
+
+.side { box-sizing: border-box; }          
 .top h1 { margin: 0 0 4px; }
 .top .mut { margin: 0; }
-.out { display: block; box-sizing: border-box; }   /* it is a link, so width:100% needs block */
-/* Sidebar text hidden by default */
+.out { display: block; box-sizing: border-box; }   
+
 .side .brand > :not(.mk),
 .side .nav,
 .side .foot {
@@ -722,7 +722,7 @@ td small {
     transition: opacity 0.2s ease;
 }
 
-/* Show complete menu on hover */
+
 .side:hover .brand > :not(.mk),
 .side:hover .nav,
 .side:hover .foot {
@@ -730,7 +730,7 @@ td small {
     visibility: visible;
 }
 
-/* Keep logo visible */
+
 .side .brand {
     min-width: 216px;
 }
@@ -739,7 +739,7 @@ td small {
     min-width: 216px;
 }
 
-/* Mobile and tablet: keep existing full menu */
+
 @media (max-width: 900px) {
     .app {
         grid-template-columns: 1fr;

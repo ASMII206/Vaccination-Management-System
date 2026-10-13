@@ -1,7 +1,7 @@
-/* =========================================================
-   VaxCare - Admin Portal extras
-   Builds on css/parent.css (same navy #142746 / amber #f9a602 theme)
-========================================================= */
+
+
+
+
 
 .nav-badge {
     margin-left: auto;
@@ -11,12 +11,12 @@
     font-size: 11px; text-align: center;
 }
 
-/* filter bars */
+
 .filter select.field, .filter input.field { width: auto; min-width: 170px; max-width: 260px; }
 .filter .field[type="search"] { min-width: 240px; }
 .filter label.mini { font-size: 12px; font-weight: bold; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
 
-/* segmented tabs */
+
 .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
 .seg a {
     padding: 8px 16px; border: 1px solid var(--field); border-radius: 22px;
@@ -26,21 +26,21 @@
 .seg a.on { background: var(--navy); border-color: var(--navy); color: #fff; }
 .seg a small { margin-left: 4px; opacity: 0.75; }
 
-/* form layout */
+
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
 .form-grid .full { grid-column: 1 / -1; }
 .help { display: block; margin-top: 5px; font-size: 12px; color: var(--muted); }
 textarea.field { height: auto; padding: 12px 14px; min-height: 90px; resize: vertical; }
 
-/* key / value detail list */
+
 .detail { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px 24px; }
 .detail dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 3px; }
 .detail dd { font-weight: bold; color: var(--navy); word-break: break-word; }
 
-/* progress bar with amber fill reused from parent.css */
+
 .bar.wide { width: 100%; max-width: 220px; }
 
-/* table helpers */
+
 td .sub { display: block; font-size: 12px; color: var(--muted); }
 td.actions { white-space: nowrap; }
 td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { margin-left: 6px; }
@@ -50,7 +50,7 @@ td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { mar
 .pbtn.good:hover { background: #17552f; border-color: #17552f; }
 .pbtn.sm.good { padding: 6px 15px; }
 
-/* reject dialog */
+
 .ov { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(12, 26, 46, 0.6); }
 .ov.open { display: flex; }
 .mod { width: 100%; max-width: 460px; background: #fff; border-radius: 18px; padding: 26px; box-shadow: 0 20px 55px rgba(0, 0, 0, 0.3); }

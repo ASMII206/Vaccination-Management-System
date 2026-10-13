@@ -9,7 +9,7 @@ $pid = parent_id();
 $today = date('Y-m-d');
 $soon = date('Y-m-d', strtotime('+30 days'));
 
-// Children belonging to the logged-in parent
+
 $q = $pdo->prepare(
     'SELECT * FROM children WHERE parent_id = ? ORDER BY name'
 );
@@ -58,18 +58,18 @@ $q = $pdo->prepare($scheduleSql);
 $q->execute([$pid]);
 $pending = $q->fetchAll();
 
-// Overdue doses without a pending or approved booking
+
 $overdue = array_filter($pending, function ($r) use ($today) {
     return $r['due_date'] < $today && !$r['booking_status'];
 });
 
-// Upcoming doses in the next 30 days
+
 $upcoming = array_filter($pending, function ($r) use ($today, $soon) {
     return $r['due_date'] >= $today
         && $r['due_date'] <= $soon;
 });
 
-// Pending booking requests
+
 $q = $pdo->prepare(
     "SELECT COUNT(*) FROM appointments
      WHERE parent_id = ? AND status = 'Pending'"
@@ -77,7 +77,7 @@ $q = $pdo->prepare(
 $q->execute([$pid]);
 $pendingReq = (int) $q->fetchColumn();
 
-// Completed vaccinations
+
 $q = $pdo->prepare(
     "SELECT COUNT(*) FROM appointments
      WHERE parent_id = ? AND vaccination_status = 'Vaccinated'"
@@ -85,7 +85,7 @@ $q = $pdo->prepare(
 $q->execute([$pid]);
 $doneCount = (int) $q->fetchColumn();
 
-// Most recent booking requests
+
 $q = $pdo->prepare(
     "SELECT a.*, h.name AS hospital,
             c.name AS child_name, v.name AS vaccine_name

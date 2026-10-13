@@ -51,7 +51,7 @@ $overdue = $count(
 );
 
 
-// Newest requests waiting for a decision
+
 $latest = $pdo->query("SELECT a.id, a.appointment_date, a.time_slot, h.name AS hospital, c.name AS child_name, v.name AS vaccine_name, p.full_name AS parent_name
     FROM appointments a
     JOIN hospitals h ON h.id = a.hospital_id
@@ -61,9 +61,9 @@ $latest = $pdo->query("SELECT a.id, a.appointment_date, a.time_slot, h.name AS h
     JOIN parents p ON p.id = a.parent_id
     WHERE a.status = 'Pending' ORDER BY a.created_at DESC, a.id DESC LIMIT 5")->fetchAll();
 
-// Next vaccination dates
 
- // Next vaccination dates
+
+ 
 $q = $pdo->prepare(
     "SELECT
         c.name AS child_name,
@@ -87,10 +87,10 @@ $q->execute([$today]);
 $upcoming = $q->fetchAll();
 
 
-// Vaccine availability
+
 $vaccines = $pdo->query('SELECT name, availability FROM vaccines ORDER BY name')->fetchAll();
 
-// Request status mix
+
 $mix = $pdo->query("SELECT status, COUNT(*) AS n FROM appointments GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
 $mixTotal = array_sum($mix);
 
