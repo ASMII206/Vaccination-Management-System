@@ -2,7 +2,6 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
 
-
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
     redirect('../' . $url);
 }
@@ -12,52 +11,55 @@ $email = '';
 $notice = flash();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
     $account = null;
 
     if (!csrf_valid()) {
         $error = 'Your session expired. Please try again.';
+
     } elseif ($email === '' || $password === '') {
         $error = 'Please enter your email and password.';
-    } else {
-        
-        if (
-            hash_equals(ADMIN_EMAIL, $email) &&
-            password_verify($password, ADMIN_PASSWORD_HASH)
-        ) {
-            $account = [
-                'role' => 'admin',
-                'id' => 0,
-                'name' => 'Administrator'
-            ];
-        }
 
-        
-        if (!$account) {
+    } else {
+
+        // Parent login
+        try {
             $q = $pdo->prepare(
                 'SELECT id, full_name, password_hash
-                 FROM parents WHERE email = ?'
+                 FROM parents
+                 WHERE email = ?'
             );
+
             $q->execute([$email]);
             $row = $q->fetch();
 
-            if ($row && password_verify($password, $row['password_hash'])) {
+            if (
+                $row &&
+                !empty($row['password_hash']) &&
+                password_verify($password, $row['password_hash'])
+            ) {
                 $account = [
                     'role' => 'parent',
                     'id' => (int) $row['id'],
                     'name' => $row['full_name']
                 ];
             }
+
+        } catch (PDOException $ex) {
+            $error = 'Parent login could not be completed. Please check the database setup.';
         }
 
-        
-        if (!$account) {
+        // Hospital login
+        if (!$account && $error === '') {
             try {
                 $q = $pdo->prepare(
                     'SELECT id, name, password_hash
-                     FROM hospitals WHERE email = ?'
+                     FROM hospitals
+                     WHERE email = ?'
                 );
+
                 $q->execute([$email]);
                 $row = $q->fetch();
 
@@ -72,24 +74,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'name' => $row['name']
                     ];
                 }
+
             } catch (PDOException $ex) {
-                
+                $error = 'Hospital login could not be completed. Please check the database setup.';
             }
         }
 
-        if (!$account) {
-            $error = 'Wrong email or password.';
-        } elseif (!($url = portal_url($account['role']))) {
-            $error = 'Your ' . $account['role'] .
-                     ' account was verified, but that portal is not available yet.';
-        } else {
-            session_regenerate_id(true);
+        // Login result
+        if (!$account && $error === '') {
+            $error = 'Wrong email or password. Please check your details or register first.';
 
-            $_SESSION['role'] = $account['role'];
-            $_SESSION['user_id'] = $account['id'];
-            $_SESSION['user_name'] = $account['name'];
+        } elseif ($account) {
 
-            redirect('../' . $url);
+            $url = portal_url($account['role']);
+
+            if (!$url) {
+                $error = 'Your account portal is not available yet.';
+
+            } else {
+                session_regenerate_id(true);
+
+                $_SESSION['role'] = $account['role'];
+                $_SESSION['user_id'] = $account['id'];
+                $_SESSION['user_name'] = $account['name'];
+
+                redirect('../' . $url);
+            }
         }
     }
 }
@@ -144,7 +154,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="success"><?= e($notice[1]) ?></p>
                 <?php endif; ?>
 
-                <p class="error" id="error"><?= e($error) ?></p>
+                <?php if ($error !== ''): ?>
+                    <p class="error" id="error">
+                        <?= e($error) ?>
+                    </p>
+                <?php endif; ?>
 
                 <button type="submit" class="btn">
                     Login

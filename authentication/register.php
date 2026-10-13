@@ -1,20 +1,27 @@
+
 <?php
 require_once __DIR__ . '/../includes/config.php';
-
 
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
     redirect('../' . $url);
 }
 
-$fields = ['role', 'name', 'email', 'phone', 'address', 'location', 'child_name', 'child_dob', 'hospital', 'vaccine_date'];
+$fields = [
+    'role', 'name', 'email', 'phone', 'address', 'location',
+    'child_name', 'child_dob', 'hospital', 'vaccine_date'
+];
+
 $old = array_fill_keys($fields, '');
+
 if (isset($_GET['role']) && in_array($_GET['role'], ['parent', 'hospital'], true)) {
-    $old['role'] = $_GET['role'];          
+    $old['role'] = $_GET['role'];
 }
+
 $errors = [];
 
-
-$hospitalList = $pdo->query('SELECT name FROM hospitals ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
+$hospitalList = $pdo->query(
+    'SELECT name FROM hospitals ORDER BY name'
+)->fetchAll(PDO::FETCH_COLUMN);
 
 function valid_date($d) {
     $dt = DateTime::createFromFormat('Y-m-d', $d);
@@ -22,138 +29,302 @@ function valid_date($d) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    foreach ($fields as $f) $old[$f] = trim($_POST[$f] ?? '');
+
+    foreach ($fields as $f) {
+        $old[$f] = trim($_POST[$f] ?? '');
+    }
+
     $old['email'] = strtolower($old['email']);
+
     $password = $_POST['password'] ?? '';
-    $confirm  = $_POST['confirm_password'] ?? '';
-    $role     = $old['role'];
-    $today    = date('Y-m-d');
+    $confirm = $_POST['confirm_password'] ?? '';
+    $role = $old['role'];
+    $today = date('Y-m-d');
     $hasChild = false;
     $hospitalId = null;
 
-    if (!csrf_valid()) $errors[] = 'Your session expired. Please try again.';
-    if (!in_array($role, ['parent', 'hospital'], true)) $errors[] = 'Please select whether you are registering as a parent or a hospital.';
-    if (mb_strlen($old['name']) < 3 || mb_strlen($old['name']) > 100) $errors[] = 'Name must be between 3 and 100 characters.';
-    $emailOk = filter_var($old['email'], FILTER_VALIDATE_EMAIL) && strlen($old['email']) <= 120;
-    if (!$emailOk) $errors[] = 'Enter a valid email address.';
-    if (strlen($password) < 8) $errors[] = 'Password must be at least 8 characters.';
-    if ($password !== $confirm) $errors[] = 'Passwords do not match.';
-    if (!preg_match('/^[0-9+\- ]{7,15}$/', $old['phone'])) $errors[] = 'Enter a valid phone number (7-15 digits, + or -).';
-    if ($old['address'] === '' || mb_strlen($old['address']) > 255) $errors[] = 'Address is required.';
-    if (empty($_POST['terms'])) $errors[] = 'Please accept the terms of service and privacy policy.';
-
-    
-    if ($emailOk) {
-        $taken = hash_equals(ADMIN_EMAIL, $old['email']);
-        if (!$taken) {
-            $q = $pdo->prepare('SELECT 1 FROM parents WHERE email = ?');
-            $q->execute([$old['email']]);
-            $taken = (bool)$q->fetchColumn();
-        }
-        if (!$taken) {
-            try {
-                $q = $pdo->prepare('SELECT 1 FROM hospitals WHERE email = ?');
-                $q->execute([$old['email']]);
-                $taken = (bool)$q->fetchColumn();
-            } catch (PDOException $ex) {  }
-        }
-        if ($taken) $errors[] = 'This email address is already registered.';
+    // Validate request and form
+    if (!csrf_valid()) {
+        $errors[] = 'Your session expired. Please try again.';
     }
 
-    if ($role === 'parent') {
-        
-        $hasChild = ($old['child_name'] !== '' || $old['child_dob'] !== '');
-        if ($hasChild) {
-            if (mb_strlen($old['child_name']) < 2 || mb_strlen($old['child_name']) > 100) $errors[] = "Enter your child's name.";
-            if (!valid_date($old['child_dob']) || $old['child_dob'] > $today) $errors[] = "Enter a valid date of birth for your child (not in the future).";
+    if (!in_array($role, ['parent', 'hospital'], true)) {
+        $errors[] = 'Please select Parent or Hospital.';
+    }
+
+    if (mb_strlen($old['name']) < 3 || mb_strlen($old['name']) > 100) {
+        $errors[] = 'Name must be between 3 and 100 characters.';
+    }
+
+    $emailOk = filter_var($old['email'], FILTER_VALIDATE_EMAIL)
+        && strlen($old['email']) <= 120;
+
+    if (!$emailOk) {
+        $errors[] = 'Enter a valid email address.';
+    }
+
+    if (strlen($password) < 8) {
+        $errors[] = 'Password must be at least 8 characters.';
+    }
+
+    if ($password !== $confirm) {
+        $errors[] = 'Passwords do not match.';
+    }
+
+    if (!preg_match('/^[0-9+\- ]{7,15}$/', $old['phone'])) {
+        $errors[] = 'Enter a valid phone number.';
+    }
+
+    if ($old['address'] === '' || mb_strlen($old['address']) > 255) {
+        $errors[] = 'Address is required.';
+    }
+
+    if (empty($_POST['terms'])) {
+        $errors[] = 'Please accept the terms of service and privacy policy.';
+    }
+
+    // Check whether email is already registered
+    // No hardcoded ADMIN_EMAIL or dummy account is used.
+    if ($emailOk) {
+
+        $q = $pdo->prepare(
+            'SELECT 1 FROM parents WHERE email = ? LIMIT 1'
+        );
+        $q->execute([$old['email']]);
+        $taken = (bool) $q->fetchColumn();
+
+        if (!$taken) {
+            $q = $pdo->prepare(
+                'SELECT 1 FROM hospitals WHERE email = ? LIMIT 1'
+            );
+            $q->execute([$old['email']]);
+            $taken = (bool) $q->fetchColumn();
         }
-        
+
+        if ($taken) {
+            $errors[] = 'This email address is already registered.';
+        }
+    }
+
+    // Parent registration validation
+    if ($role === 'parent') {
+
+        $hasChild = (
+            $old['child_name'] !== '' ||
+            $old['child_dob'] !== ''
+        );
+
+        if ($hasChild) {
+
+            if (
+                mb_strlen($old['child_name']) < 2 ||
+                mb_strlen($old['child_name']) > 100
+            ) {
+                $errors[] = "Enter your child's name.";
+            }
+
+            if (
+                !valid_date($old['child_dob']) ||
+                $old['child_dob'] > $today
+            ) {
+                $errors[] = "Enter a valid date of birth for your child.";
+            }
+        }
+
+        // Optional vaccination booking
         if ($old['hospital'] !== '' || $old['vaccine_date'] !== '') {
+
             if (!$hasChild) {
-                $errors[] = "Add your child's name and date of birth to request a vaccination booking.";
-            } elseif ($old['hospital'] === '' || $old['vaccine_date'] === '') {
-                $errors[] = 'Enter both the hospital and the vaccination date, or leave both empty.';
+                $errors[] = "Add your child's name and date of birth to request a booking.";
+
+            } elseif (
+                $old['hospital'] === '' ||
+                $old['vaccine_date'] === ''
+            ) {
+                $errors[] = 'Enter both the hospital and vaccination date, or leave both empty.';
+
             } else {
-                if (!valid_date($old['vaccine_date']) || $old['vaccine_date'] < $today) $errors[] = 'Vaccination date must be today or a future date.';
-                $q = $pdo->prepare('SELECT id FROM hospitals WHERE LOWER(name) = LOWER(?)');
+
+                if (
+                    !valid_date($old['vaccine_date']) ||
+                    $old['vaccine_date'] < $today
+                ) {
+                    $errors[] = 'Vaccination date must be today or a future date.';
+                }
+
+                $q = $pdo->prepare(
+                    'SELECT id FROM hospitals
+                     WHERE LOWER(name) = LOWER(?)'
+                );
                 $q->execute([$old['hospital']]);
                 $found = $q->fetchAll(PDO::FETCH_COLUMN);
+
                 if (!$found) {
-                    $q = $pdo->prepare('SELECT id FROM hospitals WHERE name LIKE ?');
+                    $q = $pdo->prepare(
+                        'SELECT id FROM hospitals WHERE name LIKE ?'
+                    );
                     $q->execute(['%' . $old['hospital'] . '%']);
                     $found = $q->fetchAll(PDO::FETCH_COLUMN);
                 }
-                if (count($found) === 1) $hospitalId = (int)$found[0];
-                else $errors[] = 'Please choose a hospital from the suggestions list.';
+
+                if (count($found) === 1) {
+                    $hospitalId = (int) $found[0];
+                } else {
+                    $errors[] = 'Please choose a hospital from the suggestions list.';
+                }
             }
         }
+
+    // Hospital registration validation
     } elseif ($role === 'hospital') {
-        if ($old['location'] === '' || mb_strlen($old['location']) > 100) $errors[] = 'Enter the hospital location (city / area).';
+
+        if (
+            $old['location'] === '' ||
+            mb_strlen($old['location']) > 100
+        ) {
+            $errors[] = 'Enter the hospital location (city / area).';
+        }
+
         try {
-            $pdo->query('SELECT email, password_hash FROM hospitals LIMIT 1');
+            $pdo->query(
+                'SELECT email, password_hash FROM hospitals LIMIT 1'
+            );
         } catch (PDOException $ex) {
-            $errors[] = 'Hospital registration needs the database update. Import database/update.sql first.';
+            $errors[] = 'Hospital registration requires email and password_hash columns in the hospitals table.';
         }
     }
 
+    // Create account if validation succeeds
     if (!$errors) {
+
         try {
             $pdo->beginTransaction();
+
+            // Save the user's own password securely
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
             if ($role === 'parent') {
-                $pdo->prepare('INSERT INTO parents (full_name, email, phone, address, password_hash) VALUES (?,?,?,?,?)')
-                    ->execute([$old['name'], $old['email'], $old['phone'], $old['address'], $hash]);
-                $parentId = (int)$pdo->lastInsertId();
+
+                $q = $pdo->prepare(
+                    'INSERT INTO parents
+                     (full_name, email, phone, address, password_hash)
+                     VALUES (?, ?, ?, ?, ?)'
+                );
+
+                $q->execute([
+                    $old['name'],
+                    $old['email'],
+                    $old['phone'],
+                    $old['address'],
+                    $hash
+                ]);
+
+                $parentId = (int) $pdo->lastInsertId();
 
                 if ($hasChild) {
-                    $pdo->prepare('INSERT INTO children (parent_id, name, dob) VALUES (?,?,?)')
-                        ->execute([$parentId, $old['child_name'], $old['child_dob']]);
-                    $childId = (int)$pdo->lastInsertId();
-                    generate_schedule($pdo, $childId, $old['child_dob']);
 
+                    $q = $pdo->prepare(
+                        'INSERT INTO children (parent_id, name, dob)
+                         VALUES (?, ?, ?)'
+                    );
+
+                    $q->execute([
+                        $parentId,
+                        $old['child_name'],
+                        $old['child_dob']
+                    ]);
+
+                    $childId = (int) $pdo->lastInsertId();
+
+                    generate_schedule(
+                        $pdo,
+                        $childId,
+                        $old['child_dob']
+                    );
+
+                    // Create a booking if a hospital was selected
                     if ($hospitalId) {
-                        
-                        
-$q = $pdo->prepare("
-    SELECT cv.id
-    FROM child_vaccinations cv
-    JOIN vaccines v ON v.id = cv.vaccine_id
-    WHERE cv.child_id = ?
-      AND v.availability = 'Available'
-      AND NOT EXISTS (
-          SELECT 1
-          FROM appointments a
-          WHERE a.child_vaccination_id = cv.id
-            AND a.vaccination_status = 'Vaccinated'
-      )
-    ORDER BY cv.due_date, cv.id
-    LIMIT 1
-");
-$q->execute([$childId]);
-$cvId = $q->fetchColumn();
+
+                        $q = $pdo->prepare("
+                            SELECT cv.id
+                            FROM child_vaccinations cv
+                            JOIN vaccines v ON v.id = cv.vaccine_id
+                            WHERE cv.child_id = ?
+                              AND v.availability = 'Available'
+                              AND NOT EXISTS (
+                                  SELECT 1
+                                  FROM appointments a
+                                  WHERE a.child_vaccination_id = cv.id
+                                    AND a.vaccination_status = 'Vaccinated'
+                              )
+                            ORDER BY cv.due_date, cv.id
+                            LIMIT 1
+                        ");
+
+                        $q->execute([$childId]);
+                        $cvId = $q->fetchColumn();
 
                         if ($cvId) {
-                            $pdo->prepare('INSERT INTO appointments (child_vaccination_id, parent_id, hospital_id, appointment_date, time_slot) VALUES (?,?,?,?,?)')
-                                ->execute([$cvId, $parentId, $hospitalId, $old['vaccine_date'], 'To be confirmed']);
+
+                            $q = $pdo->prepare(
+                                'INSERT INTO appointments
+                                 (child_vaccination_id, parent_id, hospital_id,
+                                  appointment_date, time_slot)
+                                 VALUES (?, ?, ?, ?, ?)'
+                            );
+
+                            $q->execute([
+                                $cvId,
+                                $parentId,
+                                $hospitalId,
+                                $old['vaccine_date'],
+                                'To be confirmed'
+                            ]);
                         }
                     }
                 }
+
             } else {
-                $pdo->prepare('INSERT INTO hospitals (name, address, location, phone, email, password_hash) VALUES (?,?,?,?,?,?)')
-                    ->execute([$old['name'], $old['address'], $old['location'], $old['phone'], $old['email'], $hash]);
+
+                // Hospital account
+                $q = $pdo->prepare(
+                    'INSERT INTO hospitals
+                     (name, address, location, phone, email, password_hash)
+                     VALUES (?, ?, ?, ?, ?, ?)'
+                );
+
+                $q->execute([
+                    $old['name'],
+                    $old['address'],
+                    $old['location'],
+                    $old['phone'],
+                    $old['email'],
+                    $hash
+                ]);
             }
 
             $pdo->commit();
+
             flash('success', 'Registration successful. Please log in.');
             redirect('login.php');
-        } catch (PDOException $ex) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
-            $errors[] = 'Something went wrong while creating your account. Please try again.';
+
+       
+} catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        try {
+            $pdo->rollBack();
+        } catch (PDOException $rollbackError) {
+            // Connection band ho to rollback skip kar do
         }
+    }
+
+    $error = 'Registration failed. Please check your database connection and try again.';
+}
+
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

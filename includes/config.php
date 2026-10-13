@@ -1,124 +1,256 @@
+
 <?php
 
+$host = "localhost";
+$username = "root";
+$password = "";
+$database = "vaccination_db";
+
 if (session_status() === PHP_SESSION_NONE) {
-    session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
+    session_set_cookie_params([
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+
     session_start();
 }
+
 date_default_timezone_set('Asia/Karachi');
 
-define('DB_HOST', 'sql204.infinityfree.com');
-define('DB_NAME', 'if0_43146506_vaccination_db');
-define('DB_USER', 'if0_43146506');
-define('DB_PASS', 'eprojectphp');
+/* Local database connection */
+$conn = mysqli_connect(
+    $host,
+    $username,
+    $password,
+    $database
+);
 
-
-
-
-define('ADMIN_EMAIL', 'admin@vaxcare.com');
-define('ADMIN_PASSWORD_HASH', '$2b$10$8Vt/SUJDTAf6h/O1gUHfHeopu0G/2zMQf1Dxc/rtcyDCLYcmKPoaG');
-
-try {
-    $pdo = new PDO('mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ]);
-} catch (PDOException $ex) {
-    die('Database connection failed. Start MySQL and import database/vaccination_db.sql, then check includes/config.php.');
+if (!$conn) {
+    die("Database connection failed: " . mysqli_connect_error());
 }
 
+mysqli_set_charset($conn, "utf8mb4");
 
+/* PDO database connection */
+try {
+    $pdo = new PDO(
+        'mysql:host=' . $host . ';dbname=' . $database . ';charset=utf8mb4',
+        $username,
+        $password,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]
+    );
+} catch (PDOException $ex) {
+    die("PDO database connection failed. Check XAMPP MySQL and the vaccination_db database.");
+}
 
-function e($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
+/* Escape output */
+function e($s) {
+    return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+}
 
-function redirect($url) { header('Location: ' . $url); exit; }
+/* Redirect */
+function redirect($url) {
+    header('Location: ' . $url);
+    exit;
+}
 
+/* Flash messages */
 function flash($type = null, $msg = null) {
-    if ($msg !== null) { $_SESSION['flash'] = [$type, $msg]; return null; }
-    if (isset($_SESSION['flash'])) { $f = $_SESSION['flash']; unset($_SESSION['flash']); return $f; }
+    if ($msg !== null) {
+        $_SESSION['flash'] = [$type, $msg];
+        return null;
+    }
+
+    if (isset($_SESSION['flash'])) {
+        $f = $_SESSION['flash'];
+        unset($_SESSION['flash']);
+        return $f;
+    }
+
     return null;
 }
 
+/* CSRF protection */
 function csrf_token() {
-    if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    }
+
     return $_SESSION['csrf'];
 }
-function csrf_field() { return '<input type="hidden" name="csrf" value="' . csrf_token() . '">'; }
-function csrf_valid() { return hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? ''); }
-function csrf_check() {
-    if (!csrf_valid()) { http_response_code(400); die('Invalid request. Please go back and try again.'); }
+
+function csrf_field() {
+    return '<input type="hidden" name="csrf" value="' .
+        csrf_token() . '">';
 }
 
+function csrf_valid() {
+    return hash_equals(
+        $_SESSION['csrf'] ?? '',
+        $_POST['csrf'] ?? ''
+    );
+}
 
+function csrf_check() {
+    if (!csrf_valid()) {
+        http_response_code(400);
+        die('Invalid request. Please go back and try again.');
+    }
+}
 
-
+/* Portal URLs */
 function portal_url($role) {
     $map = [
-        'parent'   => 'parent/dashboard.php',
+        'parent' => 'parent/dashboard.php',
         'hospital' => 'hospital/dashboard.php',
-        'admin'    => 'admin/dashboard.php',
+        'admin' => 'admin/dashboard.php',
     ];
+
     $rel = $map[$role] ?? null;
-    return ($rel && is_file(dirname(__DIR__) . '/' . $rel)) ? $rel : null;
+
+    return ($rel && is_file(dirname(__DIR__) . '/' . $rel))
+        ? $rel
+        : null;
 }
 
+/* Parent access */
 function require_parent() {
-    if (($_SESSION['role'] ?? '') !== 'parent' || empty($_SESSION['user_id'])) redirect('../authentication/login.php');
+    if (
+        ($_SESSION['role'] ?? '') !== 'parent' ||
+        empty($_SESSION['user_id'])
+    ) {
+        redirect('../authentication/login.php');
+    }
 }
-function parent_id() { return (int)($_SESSION['user_id'] ?? 0); }
 
+function parent_id() {
+    return (int)($_SESSION['user_id'] ?? 0);
+}
+
+/* Admin access */
 function require_admin() {
-    if (($_SESSION['role'] ?? '') !== 'admin') redirect('../authentication/login.php');
+    if (($_SESSION['role'] ?? '') !== 'admin') {
+        redirect('../authentication/login.php');
+    }
 }
 
+/* Hospital access */
 function require_hospital() {
-    if (($_SESSION['role'] ?? '') !== 'hospital' || empty($_SESSION['user_id'])) redirect('../authentication/login.php');
+    if (
+        ($_SESSION['role'] ?? '') !== 'hospital' ||
+        empty($_SESSION['user_id'])
+    ) {
+        redirect('../authentication/login.php');
+    }
 }
-function hospital_id() { return (int)($_SESSION['user_id'] ?? 0); }
 
+function hospital_id() {
+    return (int)($_SESSION['user_id'] ?? 0);
+}
 
+/* Check database column */
 function has_column(PDO $pdo, $table, $column) {
     static $cache = [];
+
     $key = $table . '.' . $column;
+
     if (!isset($cache[$key])) {
-        $q = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+        $q = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+             AND TABLE_NAME = ?
+             AND COLUMN_NAME = ?'
+        );
+
         $q->execute([$table, $column]);
         $cache[$key] = (bool)$q->fetchColumn();
     }
+
     return $cache[$key];
 }
 
+/* Format date */
+function fmt_date($d) {
+    return $d ? date('d M Y', strtotime($d)) : '-';
+}
 
-
-function fmt_date($d) { return $d ? date('d M Y', strtotime($d)) : '-'; }
-
+/* Calculate age */
 function age_text($dob) {
     $diff = (new DateTime($dob))->diff(new DateTime('today'));
-    if ($diff->y > 0) return $diff->y . ' yr ' . $diff->m . ' mo';
-    if ($diff->m > 0) return $diff->m . ' mo ' . $diff->d . ' d';
+
+    if ($diff->y > 0) {
+        return $diff->y . ' yr ' . $diff->m . ' mo';
+    }
+
+    if ($diff->m > 0) {
+        return $diff->m . ' mo ' . $diff->d . ' d';
+    }
+
     return $diff->d . ' days';
 }
 
-
+/* Vaccination status */
 function schedule_status($row) {
-    if ($row['is_vaccinated']) return 'Vaccinated';
-    if ($row['booking_status']) return $row['booking_status'] === 'Approved' ? 'Booked (Approved)' : 'Booked (Pending)';
-    return $row['due_date'] < date('Y-m-d') ? 'Overdue' : 'Upcoming';
+    if ($row['is_vaccinated']) {
+        return 'Vaccinated';
+    }
+
+    if ($row['booking_status']) {
+        return $row['booking_status'] === 'Approved'
+            ? 'Booked (Approved)'
+            : 'Booked (Pending)';
+    }
+
+    return $row['due_date'] < date('Y-m-d')
+        ? 'Overdue'
+        : 'Upcoming';
 }
 
+/* Status badges */
 function badge($text) {
-    $map = ['Vaccinated' => 'green', 'Approved' => 'green', 'Booked (Approved)' => 'green', 'Available' => 'green',
-            'Pending' => 'amber', 'Booked (Pending)' => 'amber', 'Upcoming' => 'blue',
-            'Overdue' => 'red', 'Rejected' => 'red', 'Not Vaccinated' => 'red', 'Unavailable' => 'red', 'Cancelled' => 'grey'];
-    return '<span class="badge ' . ($map[$text] ?? 'grey') . '">' . e($text) . '</span>';
+    $map = [
+        'Vaccinated' => 'green',
+        'Approved' => 'green',
+        'Booked (Approved)' => 'green',
+        'Available' => 'green',
+        'Pending' => 'amber',
+        'Booked (Pending)' => 'amber',
+        'Upcoming' => 'blue',
+        'Overdue' => 'red',
+        'Rejected' => 'red',
+        'Not Vaccinated' => 'red',
+        'Unavailable' => 'red',
+        'Cancelled' => 'grey'
+    ];
+
+    return '<span class="badge ' .
+        ($map[$text] ?? 'grey') . '">' .
+        e($text) . '</span>';
 }
 
-
+/* Generate child vaccination schedule */
 function generate_schedule(PDO $pdo, $childId, $dob) {
-    $vaccines = $pdo->query('SELECT id, age_in_days FROM vaccines')->fetchAll();
-    $ins = $pdo->prepare('INSERT IGNORE INTO child_vaccinations (child_id, vaccine_id, due_date) VALUES (?,?,?)');
+    $vaccines = $pdo->query(
+        'SELECT id, age_in_days FROM vaccines'
+    )->fetchAll();
+
+    $ins = $pdo->prepare(
+        'INSERT IGNORE INTO child_vaccinations
+         (child_id, vaccine_id, due_date)
+         VALUES (?, ?, ?)'
+    );
+
     foreach ($vaccines as $v) {
-        $due = date('Y-m-d', strtotime($dob . ' +' . (int)$v['age_in_days'] . ' days'));
+        $due = date(
+            'Y-m-d',
+            strtotime($dob . ' +' . (int)$v['age_in_days'] . ' days')
+        );
+
         $ins->execute([$childId, $v['id'], $due]);
     }
 }
+
