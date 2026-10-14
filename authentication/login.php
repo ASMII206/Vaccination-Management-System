@@ -1,12 +1,9 @@
 
 <?php
 require_once __DIR__ . '/../includes/config.php';
-
-
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
     redirect('../' . $url);
 }
-
 $error = '';
 $email = '';
 $notice = flash();
@@ -20,19 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($email === '' || $password === '') {
         $error = 'Please enter your email and password.';
     } else {
-        
-        if (
-            hash_equals("ADMIN_EMAIL", $email) &&
-            password_verify($password, "ADMIN_PASSWORD_HASH")
-        ) {
-            $account = [
-                'role' => 'admin',
-                'id' => 0,
-                'name' => 'Administrator'
-            ];
-        }
-
-        
         if (!$account) {
             $q = $pdo->prepare(
                 'SELECT id, full_name, password_hash
@@ -49,8 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
             }
         }
-
-        
         if (!$account) {
             try {
                 $q = $pdo->prepare(
@@ -76,14 +58,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        if (!$account && $error === '') {
+            try {
+                $q = $pdo->prepare(
+                    'SELECT id, full_name, password_hash
+                     FROM admins
+                     WHERE email = ?'
+                );
+                $q->execute([$email]);
+                $row = $q->fetch();
+
+                if (
+                    $row &&
+                    !empty($row['password_hash']) &&
+                    password_verify($password, $row['password_hash'])
+                ) {
+                    $account = [
+                        'role' => 'admin',
+                        'id' => (int) $row['id'],
+                        'name' => $row['full_name']
+                    ];
+                }
+            } catch (PDOException $ex) {
+                $error = 'Admin login could not be completed. Please check the database setup.';
+            }
+        }
+
         if (!$account) {
-            $error = 'Wrong email or password.';
+            if ($error === '') {
+                $error = 'Wrong email or password.';
+            }
         } elseif (!($url = portal_url($account['role']))) {
             $error = 'Your ' . $account['role'] .
                      ' account was verified, but that portal is not available yet.';
         } else {
             session_regenerate_id(true);
-
             $_SESSION['role'] = $account['role'];
             $_SESSION['user_id'] = $account['id'];
             $_SESSION['user_name'] = $account['name'];

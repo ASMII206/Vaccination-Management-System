@@ -8,6 +8,19 @@
 CREATE DATABASE IF NOT EXISTS `vaccination_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `vaccination_db`;
 
+CREATE TABLE IF NOT EXISTS `admins` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(100) NOT NULL,
+  `email` varchar(120) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_admin_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `admins` (`full_name`, `email`, `password_hash`) VALUES
+('VaxCare Administrator', 'admin@vaxcare.com', '$2y$10$g9GV2EY9Yiv4CPMXUAKyeet2s5n1IhmCGPULVvnSs5R6OOgHn/Pde');
+
 CREATE TABLE IF NOT EXISTS `parents` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `full_name` varchar(100) NOT NULL,
