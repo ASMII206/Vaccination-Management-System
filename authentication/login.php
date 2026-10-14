@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Login</h2>
 
             <p class="mut">
-                Sign in to access your VaxCare account.
+                Sign in to access your VaxCare account
             </p>
 
             <form id="loginForm" method="post" action="login.php">
