@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <span></span>
     </button>
         <nav>
-            <div class="links">
+            <div class="links" style="margin-left: 100px;">
             <a href="index.php">Home</a>
             <a href="#about">About</a>
             <a href="#vaccine">Vaccines</a>
@@ -262,8 +262,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <li> <i class="fa-solid fa-envelope"></i><strong>OUR MAIL</strong>Support@gmail.com</li>
                 </ul>
             </div>
-        <div class="contact-wrap">
-          <div><img src="images/left 2.jpg" alt=""></div>
+           <div class="contact-wrap">
+          <div><img src="images/left 2.jpg" style="margin-top: 10%;" alt=""></div>
             <div class="contact-card">
                 <?php if ($status): ?>
                     <div class="form-alert success"><?= htmlspecialchars($status) ?></div>

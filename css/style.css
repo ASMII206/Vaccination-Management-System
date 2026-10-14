@@ -115,7 +115,9 @@ nav a:hover { color: #f9a602; }
 .links {
     display: flex;
     align-items: center;
+    margin-left: 100;
     gap: 24px;
+
 }
 
 
@@ -192,7 +194,8 @@ nav a:hover { color: #f9a602; }
 
 @media (min-width: 1101px) and (max-width: 1280px) {
     nav a { font-size: 13px; }
-    .links { gap: 18px; }
+    .links { gap: 18px; 
+        margin-left: 100px !important; }
     .login-btn,
     .register-btn { padding: 8px 14px; }
 }
@@ -1099,7 +1102,7 @@ nav a:hover { color: #f9a602; }
 
 .contact-wrap {
     max-width: 1100px;
-    margin: 0 auto;
+    margin-top: 0px;
     display: grid;
     grid-template-columns: 1fr 1.25fr;
     gap: 60px;
@@ -1112,6 +1115,7 @@ nav a:hover { color: #f9a602; }
     display: block;
     object-fit: cover;
     border-radius: 18px;
+    margin-top: 10%;
 }
 
 .contact-card {
@@ -1191,7 +1195,7 @@ nav a:hover { color: #f9a602; }
         gap: 30px;
     }
 
-    .contact-wrap > div:first-child img { max-height: 320px; }
+    .contact-wrap > div:first-child img { max-height: 320px; margin-top: 20%;}
 }
 
 @media (max-width: 750px) {
