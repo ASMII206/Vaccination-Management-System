@@ -80,6 +80,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Admin login
+        if (!$account && $error === '') {
+            try {
+                $q = $pdo->prepare(
+                    'SELECT id, full_name, password_hash
+                     FROM admins
+                     WHERE email = ?'
+                );
+
+                $q->execute([$email]);
+                $row = $q->fetch();
+
+                if (
+                    $row &&
+                    !empty($row['password_hash']) &&
+                    password_verify($password, $row['password_hash'])
+                ) {
+                    $account = [
+                        'role' => 'admin',
+                        'id' => (int) $row['id'],
+                        'name' => $row['full_name']
+                    ];
+                }
+
+            } catch (PDOException $ex) {
+                $error = 'Admin login could not be completed. Please check the database setup.';
+            }
+        }
+
         // Login result
         if (!$account && $error === '') {
             $error = 'Wrong email or password. Please check your details or register first.';
