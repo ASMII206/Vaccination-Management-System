@@ -1,4 +1,5 @@
-  </main>
+        </main>
+    </div>
 </div>
 <?= $extraBottom ?? '' ?>
 <script src="../js/hospital.js"></script>

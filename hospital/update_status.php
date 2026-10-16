@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('appointments.php');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('manage.php#appointments');
 csrf_check();
 
 
@@ -9,7 +9,7 @@ $ret = array_filter([
     'q'      => trim($_POST['ret_q'] ?? ''),
     'status' => $_POST['ret_status'] ?? '',
 ], function ($v) { return $v !== ''; });
-$back = 'appointments.php' . ($ret ? '?' . http_build_query($ret) : '');
+$back = 'manage.php' . ($ret ? '?' . http_build_query($ret) : '') . '#appointments';
 
 $id = (int)($_POST['id'] ?? 0);
 $status = $_POST['status'] ?? '';

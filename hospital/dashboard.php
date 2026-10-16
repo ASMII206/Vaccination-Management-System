@@ -1,12 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
-
 $pageTitle = 'Dashboard';
-$pageSub = 'Overview of appointments assigned to your hospital';
 $active = 'dashboard.php';
 $today = date('Y-m-d');
-
-
 $q = $pdo->prepare("SELECT COUNT(*) AS total,
         COALESCE(SUM(vaccination_status = 'Pending'), 0) AS scheduled,
         COALESCE(SUM(vaccination_status = 'Vaccinated'), 0) AS vaccinated,
@@ -23,7 +19,6 @@ $q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND 
 $q->execute([$hid, $today]);
 $needOutcome = (int)$q->fetchColumn();
 
-
 $q = $pdo->prepare("SELECT a.id, a.appointment_date, a.time_slot, c.name AS child_name, v.name AS vaccine_name
     FROM appointments a
     JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
@@ -34,88 +29,132 @@ $q = $pdo->prepare("SELECT a.id, a.appointment_date, a.time_slot, c.name AS chil
 $q->execute([$hid, $today]);
 $next = $q->fetchAll();
 
-$pct = function ($n) use ($total) { return $total ? round($n / $total * 100, 1) : 0; };
 $decided = $vaccinated + $notVaccinated;
 $rate = $decided ? round($vaccinated / $decided * 100) : null;
 
 include __DIR__ . '/includes/layout_top.php';
 ?>
 
-<section class="pan" style="margin-bottom:20px;">
-    <h2>Hospital Details</h2>
-    <p class="mut">Your registered hospital information.</p>
-    <p><strong>Hospital Name:</strong> <?= e($hospital['name']) ?></p>
-    <p><strong>Address:</strong> <?= e($hospital['address']) ?></p>
-    <p><strong>Location:</strong> <?= e($hospital['location']) ?></p>
-    <p><strong>Phone:</strong> <?= e($hospital['phone'] ?: 'Not added yet') ?></p>
-    <a class="btn ghost sm" style="margin-top:8px" href="profile.php">Edit profile</a>
-</section>
+<?php
+/* Chart geometry (display only): circle with circumference 100 */
+$chartSum = $vaccinated + $scheduled + $notVaccinated;
+$segments = [
+    ['Vaccinated',     $vaccinated,    '#1f9d62', 'c-green'],
+    ['Scheduled',      $scheduled,     '#f9a602', 'c-amber'],
+    ['Not vaccinated', $notVaccinated, '#d9483f', 'c-red'],
+];
+$offset = 0;
+?>
 
-<div class="strip">
-  <div class="st">
-    <p><i class="dn"></i>Total appointments</p>
-    <strong><?= $total ?></strong>
-    <small>Assigned to this hospital</small>
-  </div>
-  <div class="st">
-    <p><i class="ds"></i>Awaiting outcome</p>
-    <strong><?= $scheduled ?></strong>
-    <small>Scheduled appointments</small>
-  </div>
-  <div class="st">
-    <p><i class="dv"></i>Vaccinated</p>
-    <strong><?= $vaccinated ?></strong>
-    <small>Status confirmed</small>
-  </div>
-  <div class="st">
-    <p><i class="dn"></i>Not vaccinated</p>
-    <strong><?= $notVaccinated ?></strong>
-    <small>Status confirmed</small>
-  </div>
+<div class="stats">
+    <div class="stat">
+        <div class="stat-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div><b><?= $total ?></b><span>Total appointments</span></div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><i class="fa-regular fa-clock"></i></div>
+        <div><b><?= $scheduled ?></b><span>Scheduled</span></div>
+    </div>
+    <div class="stat">
+        <div class="stat-icon"><i class="fa-solid fa-syringe"></i></div>
+        <div><b><?= $vaccinated ?></b><span>Vaccinated</span></div>
+    </div>
+    <div class="stat <?= $notVaccinated ? 'alert-tile' : '' ?>">
+        <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div><b><?= $notVaccinated ?></b><span>Not vaccinated</span></div>
+    </div>
 </div>
 
-<div class="cols">
-  <section class="pan">
-    <h2>Next appointments</h2>
-    <p class="mut">Upcoming appointments for your hospital.</p>
+<div class="grid-2">
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fa-solid fa-chart-pie"></i>Outcome Summary
+        </h2>
 
-    <?php if ($needOutcome): ?>
-      <p class="note"><b><?= $needOutcome ?></b> past appointment<?= $needOutcome === 1 ? '' : 's' ?> still need<?= $needOutcome === 1 ? 's' : '' ?> an outcome.
-        <a href="appointments.php?status=Scheduled">Review</a></p>
-    <?php endif; ?>
+        <div class="chart-wrap">
+            <div class="donut">
+                <svg viewBox="0 0 42 42" role="img" aria-label="Appointment outcomes chart">
+                    <circle class="ring base" cx="21" cy="21" r="15.9155"></circle>
+                    <?php if ($chartSum > 0): foreach ($segments as $seg):
+                        $len = $seg[1] / $chartSum * 100;
+                        if ($len <= 0) continue; ?>
+                        <circle class="ring" cx="21" cy="21" r="15.9155"
+                                stroke="<?= $seg[2] ?>"
+                                stroke-dasharray="<?= round($len, 3) ?> <?= round(100 - $len, 3) ?>"
+                                stroke-dashoffset="<?= round(-$offset, 3) ?>"></circle>
+                    <?php $offset += $len; endforeach; endif; ?>
+                </svg>
+                <div class="donut-center">
+                    <b><?= $total ?></b>
+                    <span>Appointments</span>
+                </div>
+            </div>
 
-    <?php if (!$next): ?>
-      <p>No upcoming appointments.</p>
-    <?php endif; ?>
-    <?php foreach ($next as $r): ?>
-      <div class="up">
-        <div class="dd"><b><?= date('d', strtotime($r['appointment_date'])) ?></b><small><?= date('M', strtotime($r['appointment_date'])) ?></small></div>
-        <div><b><?= e($r['child_name']) ?></b><small><?= e($r['vaccine_name']) ?> &middot; <?= e($r['time_slot']) ?></small></div>
-        <?= outcome_chip('Pending') ?>
-      </div>
-    <?php endforeach; ?>
-    <a class="btn ghost sm" style="margin-top:8px" href="appointments.php">View all appointments</a>
-  </section>
+            <div class="legend">
+                <?php foreach ($segments as $seg): ?>
+                <div class="legend-row">
+                    <i class="<?= $seg[3] ?>"></i>
+                    <span><?= e($seg[0]) ?></span>
+                    <b><?= (int)$seg[1] ?></b>
+                    <small><?= $chartSum ? round($seg[1] / $chartSum * 100) : 0 ?>%</small>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
-  <section class="pan">
-    <h2>Outcome summary</h2>
-    <p class="mut">Summary of vaccination appointments by status.</p>
-    <div class="bar">
-      <span class="dv" style="width:<?= $pct($vaccinated) ?>%"></span>
-      <span class="ds" style="width:<?= $pct($scheduled) ?>%"></span>
-      <span class="dm" style="width:<?= $pct($notVaccinated) ?>%"></span>
+        <p class="muted" style="margin-top:16px">
+            <?php if ($rate === null): ?>
+                Summary will appear here once outcomes are recorded.
+            <?php else: ?>
+                <b style="color:var(--navy)"><?= $rate ?>%</b> of recorded outcomes were vaccinated.
+            <?php endif; ?>
+        </p>
     </div>
-    <div class="lg"><span><i class="dv"></i>Vaccinated</span><b><?= $vaccinated ?></b></div>
-    <div class="lg"><span><i class="ds"></i>Scheduled</span><b><?= $scheduled ?></b></div>
-    <div class="lg"><span><i class="dm"></i>Not vaccinated</span><b><?= $notVaccinated ?></b></div>
-    <p class="rate">
-      <?php if ($rate === null): ?>
-        Vaccination summary will appear here once outcomes are recorded.
-      <?php else: ?>
-        <b><?= $rate ?>%</b> of recorded outcomes were vaccinated.
-      <?php endif; ?>
-    </p>
-  </section>
+
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fa-regular fa-bell"></i>Next Appointments
+            <small><a href="manage.php#appointments">View all</a></small>
+        </h2>
+
+        <?php if ($needOutcome): ?>
+            <ul class="notify">
+                <li class="red">
+                    <span><b><?= $needOutcome ?></b> past appointment<?= $needOutcome === 1 ? '' : 's' ?> still need<?= $needOutcome === 1 ? 's' : '' ?> an outcome.</span>
+                    <a class="pbtn sm" href="manage.php?status=Scheduled#appointments">Review</a>
+                </li>
+            </ul>
+        <?php endif; ?>
+        <?php if (!$next): ?>
+            <p class="muted">No upcoming appointments.</p>
+        <?php endif; ?>
+        <?php foreach ($next as $r): ?>
+        <div class="row-item">
+            <div>
+                <b><?= e($r['child_name']) ?></b> &ndash; <?= e($r['vaccine_name']) ?>
+                <div class="meta"><?= fmt_date($r['appointment_date']) ?> &middot; <?= e($r['time_slot']) ?></div>
+            </div>
+            <?= badge('Pending') ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<div class="card">
+    <h2 class="card-title">
+        <i class="fa-solid fa-hospital"></i>Hospital Details
+        <small><a href="manage.php#profile">Edit profile</a></small>
+    </h2>
+    <div class="table-wrap">
+        <table class="detail-table">
+            <tbody>
+                <tr><th>Hospital name</th><td><?= e($hospital['name']) ?></td></tr>
+                <tr><th>Address</th><td><?= e($hospital['address']) ?></td></tr>
+                <tr><th>Location</th><td><?= e($hospital['location']) ?></td></tr>
+                <tr><th>Phone</th><td><?= e($hospital['phone'] ?: 'Not added yet') ?></td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <?php include __DIR__ . '/includes/layout_bottom.php'; ?>

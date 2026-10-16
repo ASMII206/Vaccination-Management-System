@@ -1,5 +1,14 @@
-
 (function () {
+    /* Mobile sidebar toggle (same as parent portal) */
+    var shell = document.querySelector(".p-shell");
+    var burger = document.getElementById("pToggle");
+    var overlay = document.getElementById("pOverlay");
+    if (shell && burger) {
+        burger.addEventListener("click", function () { shell.classList.toggle("open"); });
+        if (overlay) overlay.addEventListener("click", function () { shell.classList.remove("open"); });
+    }
+
+    /* Status modal */
     var modal = document.getElementById("statusModal");
     if (!modal) return;
 
@@ -11,9 +20,7 @@
         document.getElementById("m-child").textContent = btn.dataset.child;
         document.getElementById("m-details").textContent = btn.dataset.details;
         document.getElementById("remarks").value = btn.dataset.remarks || "";
-
         radios.forEach(function (r) { r.checked = (r.value === btn.dataset.status); });
-
         modal.classList.add("open");
         document.body.style.overflow = "hidden";
         form.querySelector('input[type="radio"]').focus();

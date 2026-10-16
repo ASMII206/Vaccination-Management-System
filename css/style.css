@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 * {
     margin: 0;
     padding: 0;
@@ -21,14 +15,7 @@ body {
 }
 
 img { max-width: 100%; }
-
-
 section[id] { scroll-margin-top: 80px; }
-
-
-
-
-
 header {
     position: fixed;
     top: 0;
