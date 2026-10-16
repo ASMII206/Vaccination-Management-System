@@ -58,7 +58,7 @@ if (!in_array($filter, ['Scheduled', 'Vaccinated', 'Not Vaccinated'], true)) $fi
 
 $hasRemarks = has_column($pdo, 'appointments', 'remarks');
 
-$sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status,
+$sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status, a.status AS req_status,
                ' . ($hasRemarks ? 'a.remarks' : 'NULL') . ' AS remarks,
                c.name AS child_name, c.dob, p.full_name AS parent_name, v.name AS vaccine_name
         FROM appointments a
@@ -66,12 +66,13 @@ $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status,
         JOIN children c ON c.id = cv.child_id
         JOIN parents p ON p.id = a.parent_id
         JOIN vaccines v ON v.id = cv.vaccine_id
-        WHERE a.hospital_id = ? AND a.status = \'Approved\'';
+        WHERE a.hospital_id = ? AND a.status IN (\'Pending\', \'Approved\')';
 $params = [$hid];
 
 if ($filter !== '') {
     $sql .= ' AND a.vaccination_status = ?';
     $params[] = $filter === 'Scheduled' ? 'Pending' : $filter;
+    if ($filter === 'Scheduled') $sql .= ' AND a.status = \'Approved\'';
 }
 if ($search !== '') {
     $refId = preg_match('/^(?:vms-?)?0*(\d+)$/i', $search, $m) ? (int)$m[1] : 0;
@@ -94,7 +95,7 @@ include __DIR__ . '/includes/layout_top.php';
 ?>
 
 <div class="card sec-anchor" id="appointments">
-    <h2 class="card-title"><i class="fa-solid fa-calendar-check"></i>Appointments<small>Bookings approved by the administrator</small></h2>
+    <h2 class="card-title"><i class="fa-solid fa-calendar-check"></i>Appointments<small>Parent requests and bookings approved by the administrator</small></h2>
 
     <div class="toolbar">
         <form method="get" action="manage.php#appointments">
@@ -117,11 +118,12 @@ include __DIR__ . '/includes/layout_top.php';
             <tbody>
             <?php if (!$rows): ?>
                 <tr><td colspan="7" class="empty">
-                    <?= ($search !== '' || $filter !== '') ? 'No appointments match your search.' : 'No appointments yet. Bookings approved by the administrator will appear here.' ?>
+                    <?= ($search !== '' || $filter !== '') ? 'No appointments match your search.' : 'No appointments yet. Parent requests will appear here.' ?>
                 </td></tr>
             <?php endif; ?>
             <?php foreach ($rows as $r):
-                $isScheduled = $r['vaccination_status'] === 'Pending';
+                $awaiting = $r['req_status'] === 'Pending';
+                $isScheduled = !$awaiting && $r['vaccination_status'] === 'Pending';
                 $label = outcome_label($r['vaccination_status']); ?>
                 <tr>
                     <td><b><?= e(appt_ref($r['id'])) ?></b></td>
@@ -135,16 +137,18 @@ include __DIR__ . '/includes/layout_top.php';
                         <small><?= e($r['time_slot']) ?></small>
                     </td>
                     <td>
-                        <?= $isScheduled ? '<span class="badge amber">Scheduled</span>' : badge($r['vaccination_status']) ?>
+                        <?= $awaiting ? '<span class="badge amber">Awaiting approval</span>' : ($isScheduled ? '<span class="badge amber">Scheduled</span>' : badge($r['vaccination_status'])) ?>
                         <?php if ($r['remarks']): ?><small title="<?= e($r['remarks']) ?>">Has remarks</small><?php endif; ?>
                     </td>
                     <td>
+                        <?php if (!$awaiting): ?>
                         <button type="button" class="pbtn sm <?= $isScheduled ? '' : 'outline' ?>" data-status-open
                                 data-id="<?= (int)$r['id'] ?>"
                                 data-child="<?= e($r['child_name'] . ' (' . age_text($r['dob']) . ')') ?>"
                                 data-details="<?= e($r['vaccine_name'] . ', ' . fmt_date($r['appointment_date']) . ' - ' . $r['time_slot']) ?>"
                                 data-status="<?= e($label) ?>"
                                 data-remarks="<?= e($r['remarks']) ?>"><?= $isScheduled ? 'Update status' : 'Change' ?></button>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
