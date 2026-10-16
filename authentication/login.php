@@ -79,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'name' => $row['full_name']
                     ];
                 }
-            } catch (PDOException $ex) {
-                $error = 'Admin login could not be completed. Please check the database setup.';
-            }
+           } catch (PDOException $ex) {
+    $error = 'Admin login error: ' . $ex->getMessage();
+}
         }
 
         if (!$account) {
