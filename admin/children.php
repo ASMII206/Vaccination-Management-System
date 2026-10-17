@@ -42,29 +42,23 @@ $sql = "
     WHERE 1 = 1
 ";
 
-$params = [];
-
 if ($search !== '') {
+    $like = esc($search);
     $sql .= " AND (
-        c.name LIKE ?
-        OR p.full_name LIKE ?
-        OR p.email LIKE ?
+        c.name LIKE '%$like%'
+        OR p.full_name LIKE '%$like%'
+        OR p.email LIKE '%$like%'
     )";
-
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like, $like);
 }
 
 if ($gender !== '') {
-    $sql .= ' AND c.gender = ?';
-    $params[] = $gender;
+    $sql .= " AND c.gender = '$gender'";
 }
 
 $sql .= ' ORDER BY c.name';
 
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$rows = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include __DIR__ . '/includes/layout_top.php';
 ?>

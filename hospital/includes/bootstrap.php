@@ -4,9 +4,8 @@ require_once __DIR__ . '/../../includes/config.php';
 require_hospital();
 
 $hid = hospital_id();
-$q = $pdo->prepare('SELECT id, name, email, address, location, phone FROM hospitals WHERE id = ?');
-$q->execute([$hid]);
-$hospital = $q->fetch();
+$result = mysqli_query($conn, "SELECT id, name, email, address, location, phone FROM hospitals WHERE id = $hid");
+$hospital = mysqli_fetch_assoc($result);
 if (!$hospital) {
     redirect('../authentication/logout.php');   
 }

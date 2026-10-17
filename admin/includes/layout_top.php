@@ -10,8 +10,9 @@ $nav = [
     'hospitals.php'  => ['Hospitals',          'fa-hospital'],
     'bookings.php'   => ['Booking Details',    'fa-book-medical'],
 ];
-$q = $pdo->query("SELECT COUNT(*) FROM appointments WHERE status = 'Pending'");
-$pendingBadge = (int)$q->fetchColumn();
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE status = 'Pending'");
+$row = mysqli_fetch_row($result);
+$pendingBadge = (int)$row[0];
 $flash = flash();
 ?>
 <!DOCTYPE html>

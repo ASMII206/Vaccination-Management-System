@@ -19,9 +19,11 @@ if (isset($_GET['role']) && in_array($_GET['role'], ['parent', 'hospital'], true
 
 $errors = [];
 
-$hospitalList = $pdo->query(
-    'SELECT name FROM hospitals ORDER BY name'
-)->fetchAll(PDO::FETCH_COLUMN);
+$hospitalList = [];
+$result = mysqli_query($conn, "SELECT name FROM hospitals ORDER BY name");
+while ($row = mysqli_fetch_assoc($result)) {
+    $hospitalList[] = $row['name'];
+}
 
 function valid_date($d) {
     $dt = DateTime::createFromFormat('Y-m-d', $d);
@@ -87,18 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // No hardcoded ADMIN_EMAIL or dummy account is used.
     if ($emailOk) {
 
-        $q = $pdo->prepare(
-            'SELECT 1 FROM parents WHERE email = ? LIMIT 1'
-        );
-        $q->execute([$old['email']]);
-        $taken = (bool) $q->fetchColumn();
+        $emailSafe = esc($old['email']);
+
+        $result = mysqli_query($conn, "SELECT 1 FROM parents WHERE email = '$emailSafe' LIMIT 1");
+        $taken = mysqli_num_rows($result) > 0;
 
         if (!$taken) {
-            $q = $pdo->prepare(
-                'SELECT 1 FROM hospitals WHERE email = ? LIMIT 1'
-            );
-            $q->execute([$old['email']]);
-            $taken = (bool) $q->fetchColumn();
+            $result = mysqli_query($conn, "SELECT 1 FROM hospitals WHERE email = '$emailSafe' LIMIT 1");
+            $taken = mysqli_num_rows($result) > 0;
         }
 
         if ($taken) {
@@ -152,19 +150,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = 'Vaccination date must be today or a future date.';
                 }
 
-                $q = $pdo->prepare(
-                    'SELECT id FROM hospitals
-                     WHERE LOWER(name) = LOWER(?)'
-                );
-                $q->execute([$old['hospital']]);
-                $found = $q->fetchAll(PDO::FETCH_COLUMN);
+                $hospitalSafe = esc($old['hospital']);
+                $found = [];
+
+                $result = mysqli_query($conn, "SELECT id FROM hospitals WHERE LOWER(name) = LOWER('$hospitalSafe')");
+                while ($row = mysqli_fetch_assoc($result)) {
+                    $found[] = $row['id'];
+                }
 
                 if (!$found) {
-                    $q = $pdo->prepare(
-                        'SELECT id FROM hospitals WHERE name LIKE ?'
-                    );
-                    $q->execute(['%' . $old['hospital'] . '%']);
-                    $found = $q->fetchAll(PDO::FETCH_COLUMN);
+                    $result = mysqli_query($conn, "SELECT id FROM hospitals WHERE name LIKE '%$hospitalSafe%'");
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        $found[] = $row['id'];
+                    }
                 }
 
                 if (count($found) === 1) {
@@ -186,10 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         try {
-            $pdo->query(
-                'SELECT email, password_hash FROM hospitals LIMIT 1'
-            );
-        } catch (PDOException $ex) {
+            mysqli_query($conn, "SELECT email, password_hash FROM hospitals LIMIT 1");
+        } catch (mysqli_sql_exception $ex) {
             $errors[] = 'Hospital registration requires email and password_hash columns in the hospitals table.';
         }
     }
@@ -198,58 +194,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
 
         try {
-            $pdo->beginTransaction();
+            mysqli_begin_transaction($conn);
 
             // Save the user's own password securely
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
+            $nameSafe = esc($old['name']);
+            $emailSafe = esc($old['email']);
+            $phoneSafe = esc($old['phone']);
+            $addressSafe = esc($old['address']);
+
             if ($role === 'parent') {
 
-                $q = $pdo->prepare(
-                    'INSERT INTO parents
-                     (full_name, email, phone, address, password_hash)
-                     VALUES (?, ?, ?, ?, ?)'
-                );
+                mysqli_query($conn, "INSERT INTO parents (full_name, email, phone, address, password_hash)
+                    VALUES ('$nameSafe', '$emailSafe', '$phoneSafe', '$addressSafe', '$hash')");
 
-                $q->execute([
-                    $old['name'],
-                    $old['email'],
-                    $old['phone'],
-                    $old['address'],
-                    $hash
-                ]);
-
-                $parentId = (int) $pdo->lastInsertId();
+                $parentId = (int) mysqli_insert_id($conn);
 
                 if ($hasChild) {
 
-                    $q = $pdo->prepare(
-                        'INSERT INTO children (parent_id, name, dob)
-                         VALUES (?, ?, ?)'
-                    );
+                    $childNameSafe = esc($old['child_name']);
+                    $childDobSafe = esc($old['child_dob']);
 
-                    $q->execute([
-                        $parentId,
-                        $old['child_name'],
-                        $old['child_dob']
-                    ]);
+                    mysqli_query($conn, "INSERT INTO children (parent_id, name, dob)
+                        VALUES ($parentId, '$childNameSafe', '$childDobSafe')");
 
-                    $childId = (int) $pdo->lastInsertId();
+                    $childId = (int) mysqli_insert_id($conn);
 
-                    generate_schedule(
-                        $pdo,
-                        $childId,
-                        $old['child_dob']
-                    );
+                    generate_schedule($childId, $old['child_dob']);
 
                     // Create a booking if a hospital was selected
                     if ($hospitalId) {
 
-                        $q = $pdo->prepare("
+                        $result = mysqli_query($conn, "
                             SELECT cv.id
                             FROM child_vaccinations cv
                             JOIN vaccines v ON v.id = cv.vaccine_id
-                            WHERE cv.child_id = ?
+                            WHERE cv.child_id = $childId
                               AND v.availability = 'Available'
                               AND NOT EXISTS (
                                   SELECT 1
@@ -261,25 +242,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             LIMIT 1
                         ");
 
-                        $q->execute([$childId]);
-                        $cvId = $q->fetchColumn();
+                        $row = mysqli_fetch_assoc($result);
 
-                        if ($cvId) {
+                        if ($row) {
+                            $cvId = (int) $row['id'];
+                            $vaccineDateSafe = esc($old['vaccine_date']);
 
-                            $q = $pdo->prepare(
-                                'INSERT INTO appointments
-                                 (child_vaccination_id, parent_id, hospital_id,
-                                  appointment_date, time_slot)
-                                 VALUES (?, ?, ?, ?, ?)'
-                            );
-
-                            $q->execute([
-                                $cvId,
-                                $parentId,
-                                $hospitalId,
-                                $old['vaccine_date'],
-                                'To be confirmed'
-                            ]);
+                            mysqli_query($conn, "INSERT INTO appointments
+                                (child_vaccination_id, parent_id, hospital_id, appointment_date, time_slot)
+                                VALUES ($cvId, $parentId, $hospitalId, '$vaccineDateSafe', 'To be confirmed')");
                         }
                     }
                 }
@@ -287,39 +258,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
 
                 // Hospital account
-                $q = $pdo->prepare(
-                    'INSERT INTO hospitals
-                     (name, address, location, phone, email, password_hash)
-                     VALUES (?, ?, ?, ?, ?, ?)'
-                );
+                $locationSafe = esc($old['location']);
 
-                $q->execute([
-                    $old['name'],
-                    $old['address'],
-                    $old['location'],
-                    $old['phone'],
-                    $old['email'],
-                    $hash
-                ]);
+                mysqli_query($conn, "INSERT INTO hospitals (name, address, location, phone, email, password_hash)
+                    VALUES ('$nameSafe', '$addressSafe', '$locationSafe', '$phoneSafe', '$emailSafe', '$hash')");
             }
 
-            $pdo->commit();
+            mysqli_commit($conn);
 
             flash('success', 'Registration successful. Please log in.');
             redirect('login.php');
 
-       
-} catch (PDOException $e) {
-    if (isset($pdo) && $pdo->inTransaction()) {
-        try {
-            $pdo->rollBack();
-        } catch (PDOException $rollbackError) {
-            // Connection band ho to rollback skip kar do
-        }
-    }
+        } catch (mysqli_sql_exception $e) {
+            // Kuch galat ho to sab changes wapis le lo
+            mysqli_rollback($conn);
 
-    $error = 'Registration failed. Please check your database connection and try again.';
-}
+            $errors[] = 'Registration failed. Please check your database connection and try again.';
+        }
 
     }
 }

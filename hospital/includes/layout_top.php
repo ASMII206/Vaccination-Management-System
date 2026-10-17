@@ -4,9 +4,9 @@ $nav = [
     'dashboard.php' => ['Dashboard',               'fa-gauge'],
     'manage.php'    => ['Appointments & Profile',  'fa-calendar-check'],
 ];
-$q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND status = 'Approved' AND vaccination_status = 'Pending'");
-$q->execute([$hid]);
-$scheduledCount = (int)$q->fetchColumn();
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE hospital_id = $hid AND status = 'Approved' AND vaccination_status = 'Pending'");
+$row = mysqli_fetch_row($result);
+$scheduledCount = (int)$row[0];
 $flash = flash();
 $initial = mb_strtoupper(mb_substr($hospital['name'] ?? 'H', 0, 1));
 ?>

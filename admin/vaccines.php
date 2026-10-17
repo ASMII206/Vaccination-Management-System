@@ -9,11 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = (int)($_POST['id'] ?? 0);
     $to = $_POST['availability'] ?? '';
     if (in_array($to, ['Available', 'Unavailable'], true)) {
-        $st = $pdo->prepare('UPDATE vaccines SET availability = ? WHERE id = ?');
-        $st->execute([$to, $id]);
-        $n = $pdo->prepare('SELECT name FROM vaccines WHERE id = ?');
-        $n->execute([$id]);
-        if ($name = $n->fetchColumn()) flash('success', $name . ' is now marked ' . strtolower($to) . '.');
+        mysqli_query($conn, "UPDATE vaccines SET availability = '$to' WHERE id = $id");
+        $result = mysqli_query($conn, "SELECT name FROM vaccines WHERE id = $id");
+        $row = mysqli_fetch_assoc($result);
+        if ($row) flash('success', $row['name'] . ' is now marked ' . strtolower($to) . '.');
         else flash('error', 'Vaccine not found.');
     }
     redirect('vaccines.php' . qs(['filter' => $_POST['filter'] ?? '']));
@@ -22,14 +21,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $filter = $_GET['filter'] ?? '';
 if (!in_array($filter, ['Available', 'Unavailable'], true)) $filter = '';
 
-$counts = $pdo->query("SELECT availability, COUNT(*) FROM vaccines GROUP BY availability")->fetchAll(PDO::FETCH_KEY_PAIR);
+$result = mysqli_query($conn, "SELECT availability, COUNT(*) AS n FROM vaccines GROUP BY availability");
+$counts = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $counts[$row['availability']] = $row['n'];
+}
 $all = array_sum($counts);
 
 $sql = 'SELECT v.*, (SELECT COUNT(*) FROM child_vaccinations cv WHERE cv.vaccine_id = v.id) AS scheduled
-        FROM vaccines v' . ($filter !== '' ? ' WHERE v.availability = ?' : '') . ' ORDER BY v.age_in_days, v.name';
-$q = $pdo->prepare($sql);
-$q->execute($filter !== '' ? [$filter] : []);
-$rows = $q->fetchAll();
+        FROM vaccines v';
+if ($filter !== '') {
+    $sql .= " WHERE v.availability = '$filter'";
+}
+$sql .= ' ORDER BY v.age_in_days, v.name';
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 function recommended_age($days) {
     $days = (int)$days;

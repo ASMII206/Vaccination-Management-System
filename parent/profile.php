@@ -7,9 +7,8 @@ $active = 'profile.php';
 $pid = parent_id();
 $errors = [];
 
-$q = $pdo->prepare('SELECT * FROM parents WHERE id = ?');
-$q->execute([$pid]);
-$me = $q->fetch();
+$result = mysqli_query($conn, "SELECT * FROM parents WHERE id = $pid");
+$me = mysqli_fetch_assoc($result);
 if (!$me) {
     redirect('../authentication/logout.php');
 }
@@ -24,7 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif (strlen($new) < 8) $errors[] = 'The new password must be at least 8 characters.';
         elseif ($new !== ($_POST['confirm'] ?? '')) $errors[] = 'The new passwords do not match.';
         else {
-            $pdo->prepare('UPDATE parents SET password_hash = ? WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $pid]);
+            $newHash = password_hash($new, PASSWORD_DEFAULT);
+            mysqli_query($conn, "UPDATE parents SET password_hash = '$newHash' WHERE id = $pid");
             flash('success', 'Password changed.');
             redirect('profile.php');
         }
@@ -36,7 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!preg_match('/^[0-9+\- ]{7,15}$/', $phone)) $errors[] = 'Enter a valid phone number (7-15 digits, + or -).';
         if ($addr === '' || mb_strlen($addr) > 255) $errors[] = 'Address is required.';
         if (!$errors) {
-            $pdo->prepare('UPDATE parents SET full_name = ?, phone = ?, address = ? WHERE id = ?')->execute([$name, $phone, $addr, $pid]);
+            $nameSafe = esc($name);
+            $phoneSafe = esc($phone);
+            $addrSafe = esc($addr);
+            mysqli_query($conn, "UPDATE parents SET full_name = '$nameSafe', phone = '$phoneSafe', address = '$addrSafe' WHERE id = $pid");
             $_SESSION['user_name'] = $name;
             flash('success', 'Profile updated.');
             redirect('profile.php');

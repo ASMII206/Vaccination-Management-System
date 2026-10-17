@@ -16,31 +16,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $back = 'requests.php' . qs(['status' => $_POST['ret_status'] ?? '', 'q' => trim($_POST['ret_q'] ?? '')]);
 
-    $q = $pdo->prepare('SELECT a.id, a.status, a.child_vaccination_id, v.name AS vaccine_name, v.availability
+    $result = mysqli_query($conn, "SELECT a.id, a.status, a.child_vaccination_id, v.name AS vaccine_name, v.availability
         FROM appointments a
         JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
         JOIN vaccines v ON v.id = cv.vaccine_id
-        WHERE a.id = ?');
-    $q->execute([$id]);
-    $req = $q->fetch();
+        WHERE a.id = $id");
+    $req = mysqli_fetch_assoc($result);
 
     if (!$req) {
         flash('error', 'Request not found.');
     } elseif ($req['status'] !== 'Pending') {
         flash('error', booking_ref($id) . ' has already been ' . strtolower($req['status']) . '.');
     } elseif ($action === 'approve') {
-        $dup = $pdo->prepare("SELECT 1 FROM appointments WHERE child_vaccination_id = ? AND id <> ? AND (status = 'Approved' OR vaccination_status = 'Vaccinated') LIMIT 1");
-        $dup->execute([$req['child_vaccination_id'], $id]);
+        $cvId = (int)$req['child_vaccination_id'];
+        $dup = mysqli_query($conn, "SELECT 1 FROM appointments WHERE child_vaccination_id = $cvId AND id <> $id AND (status = 'Approved' OR vaccination_status = 'Vaccinated') LIMIT 1");
         if ($req['availability'] === 'Unavailable') {
             flash('error', $req['vaccine_name'] . ' is currently unavailable, so this request cannot be approved. Mark the vaccine available first.');
-        } elseif ($dup->fetchColumn()) {
+        } elseif (mysqli_num_rows($dup) > 0) {
             flash('error', 'This dose already has an approved booking or is already vaccinated.');
         } else {
-            $pdo->prepare("UPDATE appointments SET status = 'Approved' WHERE id = ? AND status = 'Pending'")->execute([$id]);
+            mysqli_query($conn, "UPDATE appointments SET status = 'Approved' WHERE id = $id AND status = 'Pending'");
             flash('success', booking_ref($id) . ' approved. It is now visible to the hospital.');
         }
     } elseif ($action === 'reject') {
-        $pdo->prepare("UPDATE appointments SET status = 'Rejected' WHERE id = ? AND status = 'Pending'")->execute([$id]);
+        mysqli_query($conn, "UPDATE appointments SET status = 'Rejected' WHERE id = $id AND status = 'Pending'");
         flash('success', booking_ref($id) . ' rejected.');
     } else {
         flash('error', 'Unknown action.');
@@ -48,7 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect($back);
 }
 
-$counts = $pdo->query('SELECT status, COUNT(*) FROM appointments GROUP BY status')->fetchAll(PDO::FETCH_KEY_PAIR);
+$result = mysqli_query($conn, "SELECT status, COUNT(*) AS n FROM appointments GROUP BY status");
+$counts = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $counts[$row['status']] = $row['n'];
+}
 
 $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.status, a.created_at,
                c.name AS child_name, c.dob, v.name AS vaccine_name, v.availability,
@@ -60,18 +63,15 @@ $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.status, a.created_at,
         JOIN hospitals h ON h.id = a.hospital_id
         JOIN parents p ON p.id = a.parent_id
         WHERE 1=1';
-$params = [];
-if ($filter !== 'All') { $sql .= ' AND a.status = ?'; $params[] = $filter; }
+if ($filter !== 'All') { $sql .= " AND a.status = '$filter'"; }
 if ($search !== '') {
     $refId = preg_match('/^(?:vms-?)?0*(\d+)$/i', $search, $m) ? (int)$m[1] : 0;
-    $sql .= ' AND (c.name LIKE ? OR p.full_name LIKE ? OR v.name LIKE ? OR h.name LIKE ? OR a.id = ?)';
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like, $like, $like, $refId);
+    $like = esc($search);
+    $sql .= " AND (c.name LIKE '%$like%' OR p.full_name LIKE '%$like%' OR v.name LIKE '%$like%' OR h.name LIKE '%$like%' OR a.id = $refId)";
 }
 $sql .= ' ORDER BY a.created_at DESC, a.id DESC';
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$rows = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 $tab = function ($s) use ($search) { return 'requests.php' . qs(['status' => $s, 'q' => $search]); };
 

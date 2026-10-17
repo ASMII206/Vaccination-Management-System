@@ -17,71 +17,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($email === '' || $password === '') {
         $error = 'Please enter your email and password.';
     } else {
-        if (!$account) {
-            $q = $pdo->prepare(
-                'SELECT id, full_name, password_hash
-                 FROM parents WHERE email = ?'
-            );
-            $q->execute([$email]);
-            $row = $q->fetch();
+        $emailSafe = esc($email);
 
-            if ($row && password_verify($password, $row['password_hash'])) {
-                $account = [
-                    'role' => 'parent',
-                    'id' => (int) $row['id'],
-                    'name' => $row['full_name']
-                ];
-            }
+        // Parent login check
+        $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM parents WHERE email = '$emailSafe'");
+        $row = mysqli_fetch_assoc($result);
+
+        if ($row && password_verify($password, $row['password_hash'])) {
+            $account = [
+                'role' => 'parent',
+                'id' => (int) $row['id'],
+                'name' => $row['full_name']
+            ];
         }
+
+        // Hospital login check
         if (!$account) {
             try {
-                $q = $pdo->prepare(
-                    'SELECT id, name, password_hash
-                     FROM hospitals WHERE email = ?'
-                );
-                $q->execute([$email]);
-                $row = $q->fetch();
+                $result = mysqli_query($conn, "SELECT id, name, password_hash FROM hospitals WHERE email = '$emailSafe'");
+                $row = mysqli_fetch_assoc($result);
 
-                if (
-                    $row &&
-                    !empty($row['password_hash']) &&
-                    password_verify($password, $row['password_hash'])
-                ) {
+                if ($row && !empty($row['password_hash']) && password_verify($password, $row['password_hash'])) {
                     $account = [
                         'role' => 'hospital',
                         'id' => (int) $row['id'],
                         'name' => $row['name']
                     ];
                 }
-            } catch (PDOException $ex) {
-                
+            } catch (mysqli_sql_exception $ex) {
+                // hospitals table me email column na ho to ignore karo
             }
         }
 
+        // Admin login check
         if (!$account && $error === '') {
             try {
-                $q = $pdo->prepare(
-                    'SELECT id, full_name, password_hash
-                     FROM admins
-                     WHERE email = ?'
-                );
-                $q->execute([$email]);
-                $row = $q->fetch();
+                $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM admins WHERE email = '$emailSafe'");
+                $row = mysqli_fetch_assoc($result);
 
-                if (
-                    $row &&
-                    !empty($row['password_hash']) &&
-                    password_verify($password, $row['password_hash'])
-                ) {
+                if ($row && !empty($row['password_hash']) && password_verify($password, $row['password_hash'])) {
                     $account = [
                         'role' => 'admin',
                         'id' => (int) $row['id'],
                         'name' => $row['full_name']
                     ];
                 }
-           } catch (PDOException $ex) {
-    $error = 'Admin login error: ' . $ex->getMessage();
-}
+            } catch (mysqli_sql_exception $ex) {
+                $error = 'Admin login error: ' . $ex->getMessage();
+            }
         }
 
         if (!$account) {

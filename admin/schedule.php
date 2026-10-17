@@ -58,39 +58,31 @@ $sql = "
     )
 ";
 
-$params = [];
-
 if ($view === 'upcoming') {
-    $sql .= ' AND cv.due_date >= ?';
-    $params[] = $today;
+    $sql .= " AND cv.due_date >= '$today'";
 }
 
 if ($view === 'overdue') {
-    $sql .= ' AND cv.due_date < ?';
-    $params[] = $today;
+    $sql .= " AND cv.due_date < '$today'";
 }
 
 if ($from !== '') {
-    $sql .= ' AND cv.due_date >= ?';
-    $params[] = $from;
+    $sql .= " AND cv.due_date >= '" . esc($from) . "'";
 }
 
 if ($to !== '') {
-    $sql .= ' AND cv.due_date <= ?';
-    $params[] = $to;
+    $sql .= " AND cv.due_date <= '" . esc($to) . "'";
 }
 
 if ($search !== '') {
-    $sql .= ' AND (c.name LIKE ? OR v.name LIKE ? OR p.full_name LIKE ?)';
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like, $like);
+    $like = esc($search);
+    $sql .= " AND (c.name LIKE '%$like%' OR v.name LIKE '%$like%' OR p.full_name LIKE '%$like%')";
 }
 
 $sql .= ' ORDER BY cv.due_date, c.name LIMIT 500';
 
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$due = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$due = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
 $sql = "
@@ -114,39 +106,31 @@ $sql = "
       AND a.vaccination_status = 'Pending'
 ";
 
-$params = [];
-
 if ($view === 'upcoming') {
-    $sql .= ' AND a.appointment_date >= ?';
-    $params[] = $today;
+    $sql .= " AND a.appointment_date >= '$today'";
 }
 
 if ($view === 'overdue') {
-    $sql .= ' AND a.appointment_date < ?';
-    $params[] = $today;
+    $sql .= " AND a.appointment_date < '$today'";
 }
 
 if ($from !== '') {
-    $sql .= ' AND a.appointment_date >= ?';
-    $params[] = $from;
+    $sql .= " AND a.appointment_date >= '" . esc($from) . "'";
 }
 
 if ($to !== '') {
-    $sql .= ' AND a.appointment_date <= ?';
-    $params[] = $to;
+    $sql .= " AND a.appointment_date <= '" . esc($to) . "'";
 }
 
 if ($search !== '') {
-    $sql .= ' AND (c.name LIKE ? OR v.name LIKE ? OR p.full_name LIKE ? OR h.name LIKE ?)';
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like, $like, $like);
+    $like = esc($search);
+    $sql .= " AND (c.name LIKE '%$like%' OR v.name LIKE '%$like%' OR p.full_name LIKE '%$like%' OR h.name LIKE '%$like%')";
 }
 
 $sql .= ' ORDER BY a.appointment_date, a.id LIMIT 500';
 
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$booked = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$booked = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 $tab = function ($v) use ($search, $from, $to) {
     return 'schedule.php' . qs([

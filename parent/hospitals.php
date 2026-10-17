@@ -5,11 +5,12 @@ require_parent();
 $pageTitle = 'Hospitals';
 $active = 'hospitals.php';
 $search = trim($_GET['q'] ?? '');
-$like = '%' . $search . '%';
+$searchSafe = esc($search);
 
-$q = $pdo->prepare('SELECT id, name, address, location, phone FROM hospitals WHERE name LIKE ? OR location LIKE ? OR address LIKE ? ORDER BY name');
-$q->execute([$like, $like, $like]);
-$hospitals = $q->fetchAll();
+$result = mysqli_query($conn, "SELECT id, name, address, location, phone FROM hospitals
+    WHERE name LIKE '%$searchSafe%' OR location LIKE '%$searchSafe%' OR address LIKE '%$searchSafe%'
+    ORDER BY name");
+$hospitals = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include 'includes/layout_top.php';
 ?>

@@ -13,7 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
 
     if (($_POST['action'] ?? '') === 'delete') {
-        $pdo->prepare('DELETE FROM children WHERE id = ? AND parent_id = ?')->execute([(int)($_POST['id'] ?? 0), $pid]);
+        $deleteId = (int)($_POST['id'] ?? 0);
+        mysqli_query($conn, "DELETE FROM children WHERE id = $deleteId AND parent_id = $pid");
         flash('success', 'Child record deleted.');
         redirect('children.php');
     }
@@ -28,17 +29,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($form['notes']) > 255) $errors[] = 'Notes can be at most 255 characters.';
 
     if (!$errors) {
-        $pdo->prepare('INSERT INTO children (parent_id, name, dob, gender, blood_group, notes) VALUES (?,?,?,?,?,?)')
-            ->execute([$pid, $form['name'], $form['dob'], $form['gender'], $form['blood_group'] ?: null, $form['notes'] ?: null]);
-        generate_schedule($pdo, (int)$pdo->lastInsertId(), $form['dob']);
+        $nameSafe = esc($form['name']);
+        $dobSafe = esc($form['dob']);
+        $genderSafe = esc($form['gender']);
+        $bloodSql = nullable($form['blood_group']);
+        $notesSql = nullable($form['notes']);
+
+        mysqli_query($conn, "INSERT INTO children (parent_id, name, dob, gender, blood_group, notes)
+            VALUES ($pid, '$nameSafe', '$dobSafe', '$genderSafe', $bloodSql, $notesSql)");
+        generate_schedule(mysqli_insert_id($conn), $form['dob']);
         flash('success', 'Child added. The vaccination schedule has been created.');
         redirect('children.php');
     }
 }
 
-$q = $pdo->prepare('SELECT * FROM children WHERE parent_id = ? ORDER BY created_at DESC, id DESC');
-$q->execute([$pid]);
-$children = $q->fetchAll();
+$result = mysqli_query($conn, "SELECT * FROM children WHERE parent_id = $pid ORDER BY created_at DESC, id DESC");
+$children = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include 'includes/layout_top.php';
 ?>

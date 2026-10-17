@@ -1,18 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
-
 $pageTitle = 'Booking Details';
 $active = 'bookings.php';
-
 $search = trim($_GET['q'] ?? '');
 $hospitalId = (int)($_GET['hospital'] ?? 0);
 $status = $_GET['status'] ?? '';
 if (!in_array($status, ['Pending', 'Approved', 'Rejected', 'Cancelled'], true)) $status = '';
 $from = clean_date($_GET['from'] ?? '');
 $to = clean_date($_GET['to'] ?? '');
-
-$hospitals = $pdo->query('SELECT id, name FROM hospitals ORDER BY name')->fetchAll();
-
+$result = mysqli_query($conn, "SELECT id, name FROM hospitals ORDER BY name");
+$hospitals = mysqli_fetch_all($result, MYSQLI_ASSOC);
 $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.status, a.vaccination_status, a.created_at,
                c.id AS child_id, c.name AS child_name, c.dob, v.name AS vaccine_name,
                h.name AS hospital, p.full_name AS parent_name, p.phone AS parent_phone
@@ -23,22 +20,18 @@ $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.status, a.vaccination_st
         JOIN hospitals h ON h.id = a.hospital_id
         JOIN parents p ON p.id = a.parent_id
         WHERE 1=1';
-$params = [];
-if ($hospitalId) { $sql .= ' AND a.hospital_id = ?'; $params[] = $hospitalId; }
-if ($status !== '') { $sql .= ' AND a.status = ?'; $params[] = $status; }
-if ($from !== '') { $sql .= ' AND a.appointment_date >= ?'; $params[] = $from; }
-if ($to !== '') { $sql .= ' AND a.appointment_date <= ?'; $params[] = $to; }
+if ($hospitalId) { $sql .= " AND a.hospital_id = $hospitalId"; }
+if ($status !== '') { $sql .= " AND a.status = '" . esc($status) . "'"; }
+if ($from !== '') { $sql .= " AND a.appointment_date >= '" . esc($from) . "'"; }
+if ($to !== '') { $sql .= " AND a.appointment_date <= '" . esc($to) . "'"; }
 if ($search !== '') {
     $refId = preg_match('/^(?:vms-?)?0*(\d+)$/i', $search, $m) ? (int)$m[1] : 0;
-    $sql .= ' AND (c.name LIKE ? OR p.full_name LIKE ? OR v.name LIKE ? OR a.id = ?)';
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like, $like, $refId);
+    $like = esc($search);
+    $sql .= " AND (c.name LIKE '%$like%' OR p.full_name LIKE '%$like%' OR v.name LIKE '%$like%' OR a.id = $refId)";
 }
 $sql .= ' ORDER BY a.appointment_date DESC, a.id DESC';
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$rows = $q->fetchAll();
-
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 if (isset($_GET['export'])) {
     $out = [];
     foreach ($rows as $r) {
@@ -53,7 +46,6 @@ $exportUrl = 'bookings.php' . qs(['q' => $search, 'hospital' => $hospitalId, 'st
 
 include __DIR__ . '/includes/layout_top.php';
 ?>
-
 <div class="card">
     <h2 class="card-title"><i class="fa-solid fa-book-medical"></i>Hospital Bookings from Parents<small><?= count($rows) ?> found</small></h2>
 

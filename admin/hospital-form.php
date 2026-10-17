@@ -6,13 +6,12 @@ $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 $editing = $id > 0;
 $pageTitle = $editing ? 'Update Hospital' : 'Add Hospital';
 
-$hasLogin = has_column($pdo, 'hospitals', 'email') && has_column($pdo, 'hospitals', 'password_hash');
+$hasLogin = has_column('hospitals', 'email') && has_column('hospitals', 'password_hash');
 $form = ['name' => '', 'address' => '', 'location' => '', 'phone' => '', 'email' => ''];
 $current = null;
 if ($editing) {
-    $q = $pdo->prepare('SELECT * FROM hospitals WHERE id = ?');
-    $q->execute([$id]);
-    $current = $q->fetch();
+    $result = mysqli_query($conn, "SELECT * FROM hospitals WHERE id = $id");
+    $current = mysqli_fetch_assoc($result);
     if (!$current) {
         flash('error', 'Hospital not found.');
         redirect('hospitals.php');
@@ -37,36 +36,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($password !== '' && $form['email'] === '') $errors[] = 'Add an email address so the hospital can log in with this password.';
 
     if (!$errors) {
-        $d = $pdo->prepare('SELECT 1 FROM hospitals WHERE LOWER(name) = LOWER(?) AND id <> ?');
-        $d->execute([$form['name'], $id]);
-        if ($d->fetchColumn()) $errors[] = 'A hospital with this name already exists.';
+        $nameSafe = esc($form['name']);
+        $result = mysqli_query($conn, "SELECT 1 FROM hospitals WHERE LOWER(name) = LOWER('$nameSafe') AND id <> $id");
+        if (mysqli_num_rows($result) > 0) $errors[] = 'A hospital with this name already exists.';
     }
     if (!$errors && $form['email'] !== '') {
-        $d = $pdo->prepare('SELECT 1 FROM hospitals WHERE email = ? AND id <> ?');
-        $d->execute([$form['email'], $id]);
-        if ($d->fetchColumn()) $errors[] = 'This email is already used by another hospital.';
-        $d = $pdo->prepare('SELECT 1 FROM parents WHERE email = ?');
-        $d->execute([$form['email']]);
-        if ($d->fetchColumn() || hash_equals(ADMIN_EMAIL, $form['email'])) $errors[] = 'This email is already registered to another account.';
+        $emailSafe = esc($form['email']);
+        $result = mysqli_query($conn, "SELECT 1 FROM hospitals WHERE email = '$emailSafe' AND id <> $id");
+        if (mysqli_num_rows($result) > 0) $errors[] = 'This email is already used by another hospital.';
+
+        // Parent ya admin account me bhi yeh email nahi hona chahiye
+        $result = mysqli_query($conn, "SELECT 1 FROM parents WHERE email = '$emailSafe'");
+        $usedByParent = mysqli_num_rows($result) > 0;
+        $result = mysqli_query($conn, "SELECT 1 FROM admins WHERE email = '$emailSafe'");
+        $usedByAdmin = mysqli_num_rows($result) > 0;
+        if ($usedByParent || $usedByAdmin) $errors[] = 'This email is already registered to another account.';
     }
 
     if (!$errors) {
         $email = $form['email'] !== '' ? $form['email'] : null;
         $phone = $form['phone'] !== '' ? $form['phone'] : null;
+        $nameSafe = esc($form['name']);
+        $addressSafe = esc($form['address']);
+        $locationSafe = esc($form['location']);
+        $phoneSql = nullable($phone);
+        $emailSql = nullable($email);
+
         if ($editing) {
-            $pdo->prepare('UPDATE hospitals SET name = ?, address = ?, location = ?, phone = ? WHERE id = ?')
-                ->execute([$form['name'], $form['address'], $form['location'], $phone, $id]);
-            if ($hasLogin) $pdo->prepare('UPDATE hospitals SET email = ? WHERE id = ?')->execute([$email, $id]);
+            mysqli_query($conn, "UPDATE hospitals SET name = '$nameSafe', address = '$addressSafe', location = '$locationSafe', phone = $phoneSql WHERE id = $id");
+            if ($hasLogin) mysqli_query($conn, "UPDATE hospitals SET email = $emailSql WHERE id = $id");
             if ($password !== '') {
-                $pdo->prepare('UPDATE hospitals SET password_hash = ? WHERE id = ?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+                $newHash = password_hash($password, PASSWORD_DEFAULT);
+                mysqli_query($conn, "UPDATE hospitals SET password_hash = '$newHash' WHERE id = $id");
             }
             flash('success', $form['name'] . ' was updated.');
         } else {
-            $pdo->prepare('INSERT INTO hospitals (name, address, location, phone) VALUES (?,?,?,?)')
-                ->execute([$form['name'], $form['address'], $form['location'], $phone]);
+            mysqli_query($conn, "INSERT INTO hospitals (name, address, location, phone) VALUES ('$nameSafe', '$addressSafe', '$locationSafe', $phoneSql)");
             if ($hasLogin && $email !== null) {
-                $hash = $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : null;
-                $pdo->prepare('UPDATE hospitals SET email = ?, password_hash = ? WHERE id = ?')->execute([$email, $hash, (int)$pdo->lastInsertId()]);
+                $newId = mysqli_insert_id($conn);
+                $hashSql = $password !== '' ? "'" . password_hash($password, PASSWORD_DEFAULT) . "'" : 'NULL';
+                mysqli_query($conn, "UPDATE hospitals SET email = $emailSql, password_hash = $hashSql WHERE id = $newId");
             }
             flash('success', $form['name'] . ' was added.');
         }
