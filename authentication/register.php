@@ -405,18 +405,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         </select>
 
-      </div>
-
-
-      
-
-
-
+            </div>
       <div class="row g-3">
-
-
-        
-
         <div class="col-12 col-md-6">
 
           <label
@@ -437,10 +427,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           >
 
         </div>
-
-
-        
-
         <div class="col-12 col-md-6">
 
           <label
@@ -483,10 +469,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           >
 
         </div>
-
-
-        
-
         <div class="col-12 col-md-6">
 
           <label
@@ -504,11 +486,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             required
           >
 
-        </div>
-
-
-        
-
+            </div>
         <div class="col-12 col-md-6">
 
           <label
@@ -530,10 +508,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           >
 
         </div>
-
-
-        
-
         <div class="col-12 col-md-6" id="addressGroup">
 
           <label
@@ -553,10 +527,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           >
 
         </div>
-
-
-        
-
         <div
           class="col-12 col-md-6 d-none"
           id="locationGroup"
@@ -608,12 +578,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
       </div>
-
-
-      
-
-
-
       <div class="form-check mt-4 mb-4">
 
         <input
