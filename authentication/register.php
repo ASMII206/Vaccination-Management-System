@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/../includes/config.php';
 
@@ -19,18 +18,120 @@ if (isset($_GET['role']) && in_array($_GET['role'], ['parent', 'hospital'], true
 
 $errors = [];
 
-$hospitalList = [];
-$result = mysqli_query($conn, "SELECT name FROM hospitals ORDER BY name");
-while ($row = mysqli_fetch_assoc($result)) {
-    $hospitalList[] = $row['name'];
+$notice = flash();
+$loginError = '';
+$loginEmail = '';
+$startView = isset($_GET['role']) ? 'register' : 'login';
+
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['form_type'] ?? '') === 'login'
+) {
+    $loginEmail = strtolower(trim($_POST['email'] ?? ''));
+    $loginPassword = $_POST['password'] ?? '';
+    $account = null;
+
+    if (!csrf_valid()) {
+        $loginError = 'Your session expired. Please try again.';
+    } elseif ($loginEmail === '' || $loginPassword === '') {
+        $loginError = 'Please enter your email and password.';
+    } else {
+        $q = $pdo->prepare(
+            'SELECT id, full_name, password_hash
+             FROM parents WHERE email = ?'
+        );
+        $q->execute([$loginEmail]);
+        $row = $q->fetch();
+
+        if ($row && password_verify($loginPassword, $row['password_hash'])) {
+            $account = [
+                'role' => 'parent',
+                'id' => (int) $row['id'],
+                'name' => $row['full_name']
+            ];
+        }
+
+        if (!$account) {
+            try {
+                $q = $pdo->prepare(
+                    'SELECT id, name, password_hash
+                     FROM hospitals WHERE email = ?'
+                );
+                $q->execute([$loginEmail]);
+                $row = $q->fetch();
+
+                if (
+                    $row &&
+                    !empty($row['password_hash']) &&
+                    password_verify($loginPassword, $row['password_hash'])
+                ) {
+                    $account = [
+                        'role' => 'hospital',
+                        'id' => (int) $row['id'],
+                        'name' => $row['name']
+                    ];
+                }
+            } catch (PDOException $ex) {
+            }
+        }
+
+        if (!$account) {
+            try {
+                $q = $pdo->prepare(
+                    'SELECT id, full_name, password_hash
+                     FROM admins WHERE email = ?'
+                );
+                $q->execute([$loginEmail]);
+                $row = $q->fetch();
+
+                if (
+                    $row &&
+                    !empty($row['password_hash']) &&
+                    password_verify($loginPassword, $row['password_hash'])
+                ) {
+                    $account = [
+                        'role' => 'admin',
+                        'id' => (int) $row['id'],
+                        'name' => $row['full_name']
+                    ];
+                }
+            } catch (PDOException $ex) {
+                $loginError = 'Admin login error: ' . $ex->getMessage();
+            }
+        }
+
+        if (!$account) {
+            if ($loginError === '') {
+                $loginError = 'Wrong email or password.';
+            }
+        } elseif (!($url = portal_url($account['role']))) {
+            $loginError = 'Your ' . $account['role'] .
+                          ' account was verified, but that portal is not available yet.';
+        } else {
+            session_regenerate_id(true);
+            $_SESSION['role'] = $account['role'];
+            $_SESSION['user_id'] = $account['id'];
+            $_SESSION['user_name'] = $account['name'];
+
+            redirect('../' . $url);
+        }
+    }
 }
+
+$hospitalList = $pdo->query(
+    'SELECT name FROM hospitals ORDER BY name'
+)->fetchAll(PDO::FETCH_COLUMN);
 
 function valid_date($d) {
     $dt = DateTime::createFromFormat('Y-m-d', $d);
     return $dt && $dt->format('Y-m-d') === $d;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['form_type'] ?? '') === 'register'
+) {
+    $startView = 'register';
 
     foreach ($fields as $f) {
         $old[$f] = trim($_POST[$f] ?? '');
@@ -45,7 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hasChild = false;
     $hospitalId = null;
 
-    // Validate request and form
     if (!csrf_valid()) {
         $errors[] = 'Your session expired. Please try again.';
     }
@@ -85,8 +185,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Please accept the terms of service and privacy policy.';
     }
 
-    // Check whether email is already registered
-    // No hardcoded ADMIN_EMAIL or dummy account is used.
     if ($emailOk) {
 
         $emailSafe = esc($old['email']);
@@ -104,7 +202,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Parent registration validation
     if ($role === 'parent') {
 
         $hasChild = (
@@ -129,7 +226,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Optional vaccination booking
         if ($old['hospital'] !== '' || $old['vaccine_date'] !== '') {
 
             if (!$hasChild) {
@@ -173,7 +269,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-    // Hospital registration validation
     } elseif ($role === 'hospital') {
 
         if (
@@ -190,13 +285,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Create account if validation succeeds
     if (!$errors) {
 
         try {
             mysqli_begin_transaction($conn);
 
-            // Save the user's own password securely
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
             $nameSafe = esc($old['name']);
@@ -223,7 +316,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     generate_schedule($childId, $old['child_dob']);
 
-                    // Create a booking if a hospital was selected
                     if ($hospitalId) {
 
                         $result = mysqli_query($conn, "
@@ -257,336 +349,294 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             } else {
 
-                // Hospital account
-                $locationSafe = esc($old['location']);
+                $q = $pdo->prepare(
+                    'INSERT INTO hospitals
+                     (name, address, location, phone, email, password_hash)
+                     VALUES (?, ?, ?, ?, ?, ?)'
+                );
 
-                mysqli_query($conn, "INSERT INTO hospitals (name, address, location, phone, email, password_hash)
-                    VALUES ('$nameSafe', '$addressSafe', '$locationSafe', '$phoneSafe', '$emailSafe', '$hash')");
+                $q->execute([
+                    $old['name'],
+                    $old['address'],
+                    $old['location'],
+                    $old['phone'],
+                    $old['email'],
+                    $hash
+                ]);
             }
 
             mysqli_commit($conn);
 
             flash('success', 'Registration successful. Please log in.');
-            redirect('login.php');
+            redirect('register.php');
 
-        } catch (mysqli_sql_exception $e) {
-            // Kuch galat ho to sab changes wapis le lo
-            mysqli_rollback($conn);
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                try {
+                    $pdo->rollBack();
+                } catch (PDOException $rollbackError) {
+                }
+            }
 
             $errors[] = 'Registration failed. Please check your database connection and try again.';
         }
-
     }
 }
-?>
 
+$today = date('Y-m-d');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/register.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaxCare | Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/register.css">
 </head>
-<body>
-  
-    <section class="col-12 col-lg-7 col-xl-7 panel d-flex align-items-center justify-content-center p-3 p-sm-4 p-md-5">
 
-      <div class="panel-inner w-100">
+<body data-view="<?= e($startView) ?>">
+    <main class="page">
 
-        <form
-          method="post"
-          action="register.php"
-          id="registerForm"
-        >
+        <aside class="info">
+            <div class="info-content">
 
-          <?= csrf_field() ?>
+                <a href="../index.php" class="brand">
+                    <img src="../images/final bg logo.png" alt="VaxCare logo">
+                </a>
 
+                <h1>
+                    <span class="white">Join VaxCare today,</span>
+                    <span class="orange">protect your child's health</span>
+                </h1>
 
-          
+                <p class="lead">
+                    Create a free account as a parent or a hospital and
+                    manage every vaccination in one place.
+                </p>
 
-
-
-          <div class="form-header mb-4">
-            <h2 class="form-title">REGISTER</h2>
-          </div>
-
-          <?php if ($errors): ?>
-          <div class="form-msg error">
-            <?php foreach ($errors as $er): ?>
-            <p><?= e($er) ?></p>
-            <?php endforeach; ?>
-          </div>
-          <?php endif; ?>
-
-
-          
-
-
-
-      <div class="mb-3">
-
-        <label
-          for="role"
-          class="form-label"
-        >
-          Register as
-        </label>
-
-        <select
-          name="role"
-          id="role"
-          class="form-select"
-          required
-        >
-
-          <option
-            value=""
-            disabled
-            <?= $old['role'] === '' ? 'selected' : '' ?>
-          >
-            Select your role
-          </option>
-
-          <option value="parent"<?= $old['role'] === 'parent' ? ' selected' : '' ?>>
-            Parent
-          </option>
-
-          <option value="hospital"<?= $old['role'] === 'hospital' ? ' selected' : '' ?>>
-            Hospital
-          </option>
-
-        </select>
+                <ul class="features">
+                    <li><span class="tick">&#10003;</span>Vaccination schedule made automatically</li>
+                    <li><span class="tick">&#10003;</span>Book hospital appointments online</li>
+                    <li><span class="tick">&#10003;</span>Reminders so no dose is missed</li>
+                    <li><span class="tick">&#10003;</span>Hospitals manage bookings easily</li>
+                </ul>
 
             </div>
-      <div class="row g-3">
-        <div class="col-12 col-md-6">
+        </aside>
 
-          <label
-            for="name"
-            class="form-label"
-            id="nameLabel"
-          >
-            Name
-          </label>
+        <section class="register-section">
+            <div class="box" id="box">
 
-          <input
-            type="text"
-            name="name"
-            id="name"
-            value="<?= e($old['name']) ?>"
-            class="form-control"
-            required
-          >
+                <div class="box-head">
+                    <h2 id="headTitle">Welcome Back to VaxCare</h2>
+                    <p id="headText">Sign in to manage your child's vaccinations.</p>
+                </div>
 
-        </div>
-        <div class="col-12 col-md-6">
+                <div class="box-body">
 
-          <label
-            for="email"
-            class="form-label"
-          >
-            Email Address
-          </label>
+                    <div class="view" id="loginView">
 
-          <input
-            type="email"
-            name="email"
-            id="email"
-            value="<?= e($old['email']) ?>"
-            class="form-control"
-            required
-          >
+                        <form id="loginForm" class="login-form" method="post" action="register.php">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="form_type" value="login">
 
-        </div>
+                            <input
+                                type="email"
+                                id="loginEmail"
+                                name="email"
+                                placeholder="Email"
+                                value="<?= e($loginEmail) ?>"
+                                autocomplete="username"
+                                aria-label="Email"
+                                required
+                            >
 
+                            <div class="pass-wrap">
+                                <input
+                                    type="password"
+                                    id="loginPassword"
+                                    name="password"
+                                    placeholder="Password"
+                                    autocomplete="current-password"
+                                    aria-label="Password"
+                                    required
+                                >
+                                <button type="button" class="eye" id="toggle" aria-label="Show password">
+                                    <i class="fa fa-eye" id="eyeIcon" aria-hidden="true"></i>
+                                </button>
+                            </div>
 
-        
+                            <?php if ($notice): ?>
+                                <p class="login-success"><?= e($notice[1]) ?></p>
+                            <?php endif; ?>
 
-        <div class="col-12 col-md-6">
+                            <p class="login-error"><?= e($loginError) ?></p>
 
-          <label
-            for="password"
-            class="form-label"
-          >
-            Password
-          </label>
+                            <button type="submit" class="btn">Sign In</button>
+                        </form>
 
-          <input
-            type="password"
-            name="password"
-            id="password"
-            class="form-control"
-            minlength="8"
-            required
-          >
+                        <p class="create">Create a new account</p>
 
-        </div>
-        <div class="col-12 col-md-6">
+                        <div class="roles">
+                            <button type="button" class="role" data-open="parent">Parent</button>
+                            <button type="button" class="role" data-open="hospital">Hospital</button>
+                        </div>
 
-          <label
-            for="confirm_password"
-            class="form-label"
-          >
-            Confirm Password
-          </label>
+                        <p class="hint">
+                            <a href="../index.php">&larr; Back to Home</a>
+                        </p>
 
-          <input
-            type="password"
-            name="confirm_password"
-            id="confirm_password"
-            class="form-control"
-            required
-          >
+                    </div>
 
+                    <div class="view" id="registerView" hidden>
+
+                    <button type="button" class="login-link" id="toLogin">Already registered? Sign in</button>
+
+                    <p class="pick">Register as</p>
+
+                    <div class="roles">
+                        <button type="button" class="role" data-role="parent">Parent</button>
+                        <button type="button" class="role" data-role="hospital">Hospital</button>
+                    </div>
+
+                    <?php if ($errors): ?>
+                        <div class="form-msg error">
+                            <?php foreach ($errors as $er): ?>
+                                <p><?= e($er) ?></p>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form id="registerForm" method="post" action="register.php" novalidate>
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="form_type" value="register">
+                        <input type="hidden" name="role" id="role" value="<?= e($old['role']) ?>">
+
+                        <ol class="steps">
+                            <li class="step-item" data-dot="1"><span class="dot">1</span><span class="step-name">Account</span></li>
+                            <li class="step-item" data-dot="2"><span class="dot">2</span><span class="step-name">Contact</span></li>
+                            <li class="step-item" data-dot="3"><span class="dot">3</span><span class="step-name" id="thirdName">Details</span></li>
+                        </ol>
+
+                        <div class="step" data-step="1">
+                            <div class="fields">
+                                <div class="field">
+                                    <label for="name" id="nameLabel">Name</label>
+                                    <input type="text" name="name" id="name" value="<?= e($old['name']) ?>" required>
+                                </div>
+
+                                <div class="field">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" name="email" id="email" value="<?= e($old['email']) ?>" required>
+                                </div>
+
+                                <div class="field">
+                                    <label for="password">Password</label>
+                                    <input type="password" name="password" id="password" minlength="8" required>
+                                </div>
+
+                                <div class="field">
+                                    <label for="confirm_password">Confirm Password</label>
+                                    <input type="password" name="confirm_password" id="confirm_password" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step" data-step="2">
+                            <div class="fields">
+                                <div class="field">
+                                    <label for="phone">Phone</label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        id="phone"
+                                        value="<?= e($old['phone']) ?>"
+                                        pattern="[0-9+\- ]{7,15}"
+                                        title="Enter a valid phone number (digits, + or -)"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="field">
+                                    <label for="address">Address</label>
+                                    <input type="text" name="address" id="address" value="<?= e($old['address']) ?>" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step" data-step="3">
+                            <div class="fields">
+
+                                <div class="field full hospital-only" hidden>
+                                    <label for="location">Location (city / area)</label>
+                                    <input type="text" name="location" id="location" value="<?= e($old['location']) ?>" disabled required>
+                                </div>
+
+                                <p class="group-title full parent-only" hidden>Child details (optional)</p>
+
+                                <div class="field parent-only" hidden>
+                                    <label for="child_name">Child Name</label>
+                                    <input type="text" name="child_name" id="child_name" value="<?= e($old['child_name']) ?>" disabled>
+                                </div>
+
+                                <div class="field parent-only" hidden>
+                                    <label for="child_dob">Child Date of Birth</label>
+                                    <input type="date" name="child_dob" id="child_dob" value="<?= e($old['child_dob']) ?>" max="<?= $today ?>" disabled>
+                                </div>
+
+                                <div class="field parent-only" hidden>
+                                    <label for="hospital">Hospital Name</label>
+                                    <input
+                                        type="text"
+                                        name="hospital"
+                                        id="hospital"
+                                        value="<?= e($old['hospital']) ?>"
+                                        list="hospitalList"
+                                        placeholder="Search hospital"
+                                        autocomplete="off"
+                                        disabled
+                                    >
+                                </div>
+
+                                <div class="field parent-only" hidden>
+                                    <label for="vaccine_date">Vaccination Date</label>
+                                    <input type="date" name="vaccine_date" id="vaccine_date" value="<?= e($old['vaccine_date']) ?>" min="<?= $today ?>" disabled>
+                                </div>
+
+                            </div>
+
+                            <div class="check">
+                                <input type="checkbox" name="terms" id="terms" required>
+                                <label for="terms">I agree to the terms of service and privacy policy</label>
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button type="button" class="btn ghost" id="backBtn">Back</button>
+                            <button type="button" class="btn" id="nextBtn">Next</button>
+                            <button type="submit" class="btn" id="submitBtn">Sign up</button>
+                        </div>
+                    </form>
+
+                    <p class="hint">
+                        <a href="../index.php">&larr; Back to home</a>
+                    </p>
+
+                    </div>
+
+                </div>
             </div>
-        <div class="col-12 col-md-6">
+        </section>
 
-          <label
-            for="phone"
-            class="form-label"
-          >
-            Phone
-          </label>
+    </main>
 
-          <input
-            type="tel"
-            name="phone"
-            id="phone"
-            value="<?= e($old['phone']) ?>"
-            class="form-control"
-            pattern="[0-9+\- ]{7,15}"
-            title="Enter a valid phone number (digits, + or -)"
-            required
-          >
+    <datalist id="hospitalList">
+        <?php foreach ($hospitalList as $hn): ?>
+            <option value="<?= e($hn) ?>">
+        <?php endforeach; ?>
+    </datalist>
 
-        </div>
-        <div class="col-12 col-md-6" id="addressGroup">
-
-          <label
-            for="address"
-            class="form-label"
-          >
-            Address
-          </label>
-
-          <input
-            type="text"
-            name="address"
-            id="address"
-            value="<?= e($old['address']) ?>"
-            class="form-control"
-            required
-          >
-
-        </div>
-        <div
-          class="col-12 col-md-6 d-none"
-          id="locationGroup"
-        >
-
-          <label
-            for="location"
-            class="form-label"
-          >
-            Location (city / area)
-          </label>
-
-          <input
-            type="text"
-            name="location"
-            id="location"
-            value="<?= e($old['location']) ?>"
-            class="form-control"
-            disabled
-          >
-
-        </div>
-
-
-
-        
-
-        <div class="col-12 col-md-6 d-none parent-only">
-          <label for="child_name" class="form-label">Child Name</label>
-          <input type="text" name="child_name" id="child_name" value="<?= e($old['child_name']) ?>" class="form-control" disabled>
-        </div>
-
-        <div class="col-12 col-md-6 d-none parent-only">
-          <label for="child_dob" class="form-label">Child Date of Birth</label>
-          <input type="text" name="child_dob" id="child_dob" value="<?= e($old['child_dob']) ?>" class="form-control" placeholder="Select date"
-                 onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" disabled>
-        </div>
-
-        <div class="col-12 col-md-6 d-none parent-only">
-          <label for="hospital" class="form-label">Hospital Name</label>
-          <input type="text" name="hospital" id="hospital" value="<?= e($old['hospital']) ?>" list="hospitalList" autocomplete="off" class="form-control" placeholder="Search hospital" disabled>
-        </div>
-
-        <div class="col-12 col-md-6 d-none parent-only">
-          <label for="vaccine_date" class="form-label">Vaccination Date</label>
-          <input type="text" name="vaccine_date" id="vaccine_date" value="<?= e($old['vaccine_date']) ?>" class="form-control" placeholder="Select date"
-                 onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" disabled>
-        </div>
-
-
-      </div>
-      <div class="form-check mt-4 mb-4">
-
-        <input
-          class="form-check-input"
-          type="checkbox"
-          name="terms"
-          id="terms"
-          required
-        >
-
-        <label
-          class="form-check-label"
-          for="terms"
-        >
-          I agree to the terms of service and privacy policy
-        </label>
-
-      </div>
-
-
-      
-
-
-
-      <button
-        type="submit"
-        class="submit"
-      >
-        Sign up
-      </button>
-
-
-      
-
-
-
-      <p class="login">
-
-        <a href="../index.php">&larr; Back to home</a>
-
-      </p>
-
-
-    </form>
-
-      </div>
-
-    </section>
-  <datalist id="hospitalList">
-    <?php foreach ($hospitalList as $hn): ?>
-    <option value="<?= e($hn) ?>">
-    <?php endforeach; ?>
-  </datalist>
-
-  <script src="../js/register.js"></script>
+    <script src="../js/register.js"></script>
 </body>
 </html>

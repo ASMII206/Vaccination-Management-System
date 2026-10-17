@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/../includes/config.php';
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
@@ -44,8 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'name' => $row['name']
                     ];
                 }
-            } catch (mysqli_sql_exception $ex) {
-                // hospitals table me email column na ho to ignore karo
+            } catch (PDOException $ex) {
             }
         }
 
@@ -62,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'name' => $row['full_name']
                     ];
                 }
-            } catch (mysqli_sql_exception $ex) {
+            } catch (PDOException $ex) {
                 $error = 'Admin login error: ' . $ex->getMessage();
             }
         }
@@ -85,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,55 +95,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
-    <section class="login-section">
-        <div class="box">
+    <main class="page">
 
-            <h2>Login</h2>
+        <aside class="info">
+            <div class="info-content">
 
-            <p class="mut">
-                Sign in to access your VaxCare account
-            </p>
+                <a href="../index.php" class="brand">
+                    <img src="../images/final bg logo.png" alt="VaxCare logo">
+                    
+                </a>
 
-            <form id="loginForm" method="post" action="login.php">
-                <?= csrf_field() ?>
+                <h1>
+                    <span class="white">Protect their future,</span>
+                    <span class="orange">one vaccine at a time</span>
+                </h1>
 
-                <label for="email">Email Address</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    value="<?= e($email) ?>"
-                    autocomplete="username"
-                    required
-                >
+                <p class="lead">
+                    Track your child's immunizations, book hospital
+                    appointments and never miss a due date.
+                </p>
 
-                <label for="password">Password</label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="Enter your password"
-                    autocomplete="current-password"
-                    required
-                >
+                <ul class="features">
+                    <li><span class="tick">&#10003;</span>Complete vaccination records</li>
+                    <li><span class="tick">&#10003;</span>Easy appointment booking</li>
+                    <li><span class="tick">&#10003;</span>Timely reminders for every dose</li>
+                    <li><span class="tick">&#10003;</span>Connected with verified hospitals</li>
+                </ul>
 
-                <?php if ($notice): ?>
-                    <p class="success"><?= e($notice[1]) ?></p>
-                <?php endif; ?>
+            </div>
+        </aside>
 
-                <p class="error" id="error"><?= e($error) ?></p>
+        <section class="login-section">
+            <div class="box">
 
-                <button type="submit" class="btn">
-                    Login
-                </button>
-            </form>
+                <h2>Login</h2>
 
-            <p class="hint">
-                <a href="../index.php">&larr; Back to Home</a>
-            </p>
+                <p class="mut">
+                    Sign in to access your VaxCare account
+                </p>
 
-        </div>
-    </section>
+                <form id="loginForm" method="post" action="login.php">
+                    <?= csrf_field() ?>
+
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        value="<?= e($email) ?>"
+                        autocomplete="username"
+                        required
+                    >
+
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <?php if ($notice): ?>
+                        <p class="success"><?= e($notice[1]) ?></p>
+                    <?php endif; ?>
+
+                    <p class="error" id="error"><?= e($error) ?></p>
+
+                    <button type="submit" class="btn">
+                        Login
+                    </button>
+                </form>
+
+                <p class="hint">
+                    <a href="../index.php">&larr; Back to Home</a>
+                </p>
+
+            </div>
+        </section>
+
+    </main>
 </body>
 </html>
