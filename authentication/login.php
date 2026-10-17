@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'name' => $row['name']
                     ];
                 }
-            } catch (PDOException $ex) {
+            } catch (mysqli_sql_exception $ex) {
             }
         }
 
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'name' => $row['full_name']
                     ];
                 }
-            } catch (PDOException $ex) {
+            } catch (mysqli_sql_exception $ex) {
                 $error = 'Admin login error: ' . $ex->getMessage();
             }
         }

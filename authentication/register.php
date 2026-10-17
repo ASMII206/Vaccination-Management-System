@@ -36,12 +36,10 @@ if (
     } elseif ($loginEmail === '' || $loginPassword === '') {
         $loginError = 'Please enter your email and password.';
     } else {
-        $q = $pdo->prepare(
-            'SELECT id, full_name, password_hash
-             FROM parents WHERE email = ?'
-        );
-        $q->execute([$loginEmail]);
-        $row = $q->fetch();
+        $loginEmailSafe = esc($loginEmail);
+
+        $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM parents WHERE email = '$loginEmailSafe'");
+        $row = mysqli_fetch_assoc($result);
 
         if ($row && password_verify($loginPassword, $row['password_hash'])) {
             $account = [
@@ -53,12 +51,8 @@ if (
 
         if (!$account) {
             try {
-                $q = $pdo->prepare(
-                    'SELECT id, name, password_hash
-                     FROM hospitals WHERE email = ?'
-                );
-                $q->execute([$loginEmail]);
-                $row = $q->fetch();
+                $result = mysqli_query($conn, "SELECT id, name, password_hash FROM hospitals WHERE email = '$loginEmailSafe'");
+                $row = mysqli_fetch_assoc($result);
 
                 if (
                     $row &&
@@ -71,18 +65,14 @@ if (
                         'name' => $row['name']
                     ];
                 }
-            } catch (PDOException $ex) {
+            } catch (mysqli_sql_exception $ex) {
             }
         }
 
         if (!$account) {
             try {
-                $q = $pdo->prepare(
-                    'SELECT id, full_name, password_hash
-                     FROM admins WHERE email = ?'
-                );
-                $q->execute([$loginEmail]);
-                $row = $q->fetch();
+                $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM admins WHERE email = '$loginEmailSafe'");
+                $row = mysqli_fetch_assoc($result);
 
                 if (
                     $row &&
@@ -95,7 +85,7 @@ if (
                         'name' => $row['full_name']
                     ];
                 }
-            } catch (PDOException $ex) {
+            } catch (mysqli_sql_exception $ex) {
                 $loginError = 'Admin login error: ' . $ex->getMessage();
             }
         }
@@ -118,9 +108,11 @@ if (
     }
 }
 
-$hospitalList = $pdo->query(
-    'SELECT name FROM hospitals ORDER BY name'
-)->fetchAll(PDO::FETCH_COLUMN);
+$hospitalList = [];
+$hospitalResult = mysqli_query($conn, 'SELECT name FROM hospitals ORDER BY name');
+while ($hospitalRow = mysqli_fetch_row($hospitalResult)) {
+    $hospitalList[] = $hospitalRow[0];
+}
 
 function valid_date($d) {
     $dt = DateTime::createFromFormat('Y-m-d', $d);
@@ -349,20 +341,11 @@ if (
 
             } else {
 
-                $q = $pdo->prepare(
-                    'INSERT INTO hospitals
-                     (name, address, location, phone, email, password_hash)
-                     VALUES (?, ?, ?, ?, ?, ?)'
-                );
+                $locationSafe = esc($old['location']);
 
-                $q->execute([
-                    $old['name'],
-                    $old['address'],
-                    $old['location'],
-                    $old['phone'],
-                    $old['email'],
-                    $hash
-                ]);
+                mysqli_query($conn, "INSERT INTO hospitals
+                    (name, address, location, phone, email, password_hash)
+                    VALUES ('$nameSafe', '$addressSafe', '$locationSafe', '$phoneSafe', '$emailSafe', '$hash')");
             }
 
             mysqli_commit($conn);
@@ -370,12 +353,10 @@ if (
             flash('success', 'Registration successful. Please log in.');
             redirect('register.php');
 
-        } catch (PDOException $e) {
-            if ($pdo->inTransaction()) {
-                try {
-                    $pdo->rollBack();
-                } catch (PDOException $rollbackError) {
-                }
+        } catch (mysqli_sql_exception $e) {
+            try {
+                mysqli_rollback($conn);
+            } catch (mysqli_sql_exception $rollbackError) {
             }
 
             $errors[] = 'Registration failed. Please check your database connection and try again.';

@@ -305,18 +305,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
 
-        
-        <div class="footer-column">
+      <div class="footer-column">
 
-            <h3>QUICK LINKS</h3>
-            <span class="footer-line"></span>
+    <h3>QUICK LINKS</h3>
+    <span class="footer-line"></span>
 
-            <a href="index.php">Home</a>
-            <a href="pages/about.php">About</a>
-            <a href="pages/vaccines.php">Vaccines</a>
-            <a href="pages/contact.php">Contact</a>
+    <a href="index.php">Home</a>
+    <a href="#about">About</a>
+    <a href="#vaccines">Vaccines</a>
+    <a href="#contact">Contact</a>
 
-        </div>
+</div>
 
 
         
