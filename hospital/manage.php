@@ -13,16 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
 
     if (($_POST['action'] ?? '') === 'password') {
-        $q = $pdo->prepare('SELECT password_hash FROM hospitals WHERE id = ?');
-        $q->execute([$hid]);
-        $hash = $q->fetchColumn();
+        $result = mysqli_query($conn, "SELECT password_hash FROM hospitals WHERE id = $hid");
+        $row = mysqli_fetch_assoc($result);
+        $hash = $row ? $row['password_hash'] : '';
         $new = $_POST['new'] ?? '';
 
         if (!$hash || !password_verify($_POST['current'] ?? '', $hash)) $errorsPw[] = 'Your current password is incorrect.';
         elseif (strlen($new) < 8) $errorsPw[] = 'The new password must be at least 8 characters.';
         elseif ($new !== ($_POST['confirm'] ?? '')) $errorsPw[] = 'The new passwords do not match.';
         else {
-            $pdo->prepare('UPDATE hospitals SET password_hash = ? WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $hid]);
+            $newHash = password_hash($new, PASSWORD_DEFAULT);
+            mysqli_query($conn, "UPDATE hospitals SET password_hash = '$newHash' WHERE id = $hid");
             flash('success', 'Password changed.');
             redirect('manage.php#profile');
         }
@@ -38,8 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!preg_match('/^[0-9+\- ]{7,15}$/', $phone)) $errors[] = 'Enter a valid phone number (7-15 digits, + or -).';
 
         if (!$errors) {
-            $pdo->prepare('UPDATE hospitals SET name = ?, address = ?, location = ?, phone = ? WHERE id = ?')
-                ->execute([$name, $address, $location, $phone, $hid]);
+            $nameSafe = esc($name);
+            $addressSafe = esc($address);
+            $locationSafe = esc($location);
+            $phoneSafe = esc($phone);
+            mysqli_query($conn, "UPDATE hospitals SET name = '$nameSafe', address = '$addressSafe', location = '$locationSafe', phone = '$phoneSafe' WHERE id = $hid");
             $_SESSION['user_name'] = $name;
             flash('success', 'Hospital profile updated.');
             redirect('manage.php#profile');
@@ -56,7 +60,7 @@ $search = trim($_GET['q'] ?? '');
 $filter = $_GET['status'] ?? '';
 if (!in_array($filter, ['Scheduled', 'Vaccinated', 'Not Vaccinated'], true)) $filter = '';
 
-$hasRemarks = has_column($pdo, 'appointments', 'remarks');
+$hasRemarks = has_column('appointments', 'remarks');
 
 $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status, a.status AS req_status,
                ' . ($hasRemarks ? 'a.remarks' : 'NULL') . ' AS remarks,
@@ -66,25 +70,22 @@ $sql = 'SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status, a.st
         JOIN children c ON c.id = cv.child_id
         JOIN parents p ON p.id = a.parent_id
         JOIN vaccines v ON v.id = cv.vaccine_id
-        WHERE a.hospital_id = ? AND a.status IN (\'Pending\', \'Approved\')';
-$params = [$hid];
+        WHERE a.hospital_id = ' . $hid . ' AND a.status IN (\'Pending\', \'Approved\')';
 
 if ($filter !== '') {
-    $sql .= ' AND a.vaccination_status = ?';
-    $params[] = $filter === 'Scheduled' ? 'Pending' : $filter;
-    if ($filter === 'Scheduled') $sql .= ' AND a.status = \'Approved\'';
+    $filterValue = $filter === 'Scheduled' ? 'Pending' : $filter;
+    $sql .= " AND a.vaccination_status = '" . esc($filterValue) . "'";
+    if ($filter === 'Scheduled') $sql .= " AND a.status = 'Approved'";
 }
 if ($search !== '') {
     $refId = preg_match('/^(?:vms-?)?0*(\d+)$/i', $search, $m) ? (int)$m[1] : 0;
-    $sql .= ' AND (c.name LIKE ? OR p.full_name LIKE ? OR v.name LIKE ? OR a.id = ?)';
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like, $like, $refId);
+    $like = esc($search);
+    $sql .= " AND (c.name LIKE '%$like%' OR p.full_name LIKE '%$like%' OR v.name LIKE '%$like%' OR a.id = $refId)";
 }
-$sql .= ' ORDER BY (a.vaccination_status = \'Pending\') DESC, a.appointment_date, a.id';
+$sql .= " ORDER BY (a.vaccination_status = 'Pending') DESC, a.appointment_date, a.id";
 
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$rows = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 function tab_link($status, $search) {
     $qs = array_filter(['q' => $search, 'status' => $status], function ($v) { return $v !== ''; });

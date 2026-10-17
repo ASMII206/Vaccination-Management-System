@@ -6,21 +6,23 @@ $active = 'dashboard.php';
 $today = date('Y-m-d');
 $soon = date('Y-m-d', strtotime('+30 days'));
 
-$count = function ($sql, $params = []) use ($pdo) {
-    $q = $pdo->prepare($sql);
-    $q->execute($params);
-    return (int)$q->fetchColumn();
-};
+// Ek number (COUNT) wapis dene wali chhoti function
+function count_rows($sql) {
+    global $conn;
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_row($result);
+    return (int)$row[0];
+}
 
-$children    = $count('SELECT COUNT(*) FROM children');
-$parents     = $count('SELECT COUNT(*) FROM parents');
-$hospitals   = $count('SELECT COUNT(*) FROM hospitals');
-$pendingReq  = $count("SELECT COUNT(*) FROM appointments WHERE status = 'Pending'");
-$approved    = $count("SELECT COUNT(*) FROM appointments WHERE status = 'Approved'");
-$vaccinated  = $count("SELECT COUNT(*) FROM appointments WHERE status = 'Approved' AND vaccination_status = 'Vaccinated'");
-$unavailable = $count("SELECT COUNT(*) FROM vaccines WHERE availability = 'Unavailable'");
+$children    = count_rows('SELECT COUNT(*) FROM children');
+$parents     = count_rows('SELECT COUNT(*) FROM parents');
+$hospitals   = count_rows('SELECT COUNT(*) FROM hospitals');
+$pendingReq  = count_rows("SELECT COUNT(*) FROM appointments WHERE status = 'Pending'");
+$approved    = count_rows("SELECT COUNT(*) FROM appointments WHERE status = 'Approved'");
+$vaccinated  = count_rows("SELECT COUNT(*) FROM appointments WHERE status = 'Approved' AND vaccination_status = 'Vaccinated'");
+$unavailable = count_rows("SELECT COUNT(*) FROM vaccines WHERE availability = 'Unavailable'");
 
-$dueSoon = $count(
+$dueSoon = count_rows(
     "SELECT COUNT(*)
      FROM child_vaccinations cv
      JOIN children c ON c.id = cv.child_id
@@ -31,11 +33,10 @@ $dueSoon = $count(
          WHERE a.child_vaccination_id = cv.id
            AND a.vaccination_status = 'Vaccinated'
      )
-     AND cv.due_date BETWEEN ? AND ?",
-    [$today, $soon]
+     AND cv.due_date BETWEEN '$today' AND '$soon'"
 );
 
-$overdue = $count(
+$overdue = count_rows(
     "SELECT COUNT(*)
      FROM child_vaccinations cv
      JOIN children c ON c.id = cv.child_id
@@ -46,26 +47,25 @@ $overdue = $count(
          WHERE a.child_vaccination_id = cv.id
            AND a.vaccination_status = 'Vaccinated'
      )
-     AND cv.due_date < ?",
-    [$today]
+     AND cv.due_date < '$today'"
 );
 
 
 
-$latest = $pdo->query("SELECT a.id, a.appointment_date, a.time_slot, h.name AS hospital, c.name AS child_name, v.name AS vaccine_name, p.full_name AS parent_name
+$result = mysqli_query($conn, "SELECT a.id, a.appointment_date, a.time_slot, h.name AS hospital, c.name AS child_name, v.name AS vaccine_name, p.full_name AS parent_name
     FROM appointments a
     JOIN hospitals h ON h.id = a.hospital_id
     JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
     JOIN children c ON c.id = cv.child_id
     JOIN vaccines v ON v.id = cv.vaccine_id
     JOIN parents p ON p.id = a.parent_id
-    WHERE a.status = 'Pending' ORDER BY a.created_at DESC, a.id DESC LIMIT 5")->fetchAll();
+    WHERE a.status = 'Pending' ORDER BY a.created_at DESC, a.id DESC LIMIT 5");
+$latest = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
 
  
-$q = $pdo->prepare(
-    "SELECT
+$result = mysqli_query($conn, "SELECT
         c.name AS child_name,
         v.name AS vaccine_name,
         cv.due_date
@@ -78,20 +78,22 @@ $q = $pdo->prepare(
          WHERE a.child_vaccination_id = cv.id
            AND a.vaccination_status = 'Vaccinated'
      )
-     AND cv.due_date >= ?
+     AND cv.due_date >= '$today'
      ORDER BY cv.due_date, c.name
-     LIMIT 6"
-);
-
-$q->execute([$today]);
-$upcoming = $q->fetchAll();
+     LIMIT 6");
+$upcoming = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
 
-$vaccines = $pdo->query('SELECT name, availability FROM vaccines ORDER BY name')->fetchAll();
+$result = mysqli_query($conn, "SELECT name, availability FROM vaccines ORDER BY name");
+$vaccines = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
-$mix = $pdo->query("SELECT status, COUNT(*) AS n FROM appointments GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
+$result = mysqli_query($conn, "SELECT status, COUNT(*) AS n FROM appointments GROUP BY status");
+$mix = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $mix[$row['status']] = $row['n'];
+}
 $mixTotal = array_sum($mix);
 
 include __DIR__ . '/includes/layout_top.php';

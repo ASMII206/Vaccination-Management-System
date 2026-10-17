@@ -8,9 +8,8 @@ $pid = parent_id();
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 $groups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-$q = $pdo->prepare('SELECT * FROM children WHERE id = ? AND parent_id = ?');
-$q->execute([$id, $pid]);
-$child = $q->fetch();
+$result = mysqli_query($conn, "SELECT * FROM children WHERE id = $id AND parent_id = $pid");
+$child = mysqli_fetch_assoc($result);
 if (!$child) {
     flash('error', 'Child record not found.');
     redirect('children.php');
@@ -35,14 +34,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($new['notes']) > 255) $errors[] = 'Notes can be at most 255 characters.';
 
     if (!$errors) {
-        $pdo->prepare('UPDATE children SET name = ?, dob = ?, gender = ?, blood_group = ?, notes = ? WHERE id = ? AND parent_id = ?')
-            ->execute([$new['name'], $new['dob'], $new['gender'] ?: null, $new['blood_group'] ?: null, $new['notes'] ?: null, $id, $pid]);
+        $nameSafe = esc($new['name']);
+        $dobSafe = esc($new['dob']);
+        $genderSql = nullable($new['gender']);
+        $bloodSql = nullable($new['blood_group']);
+        $notesSql = nullable($new['notes']);
+
+        mysqli_query($conn, "UPDATE children
+            SET name = '$nameSafe', dob = '$dobSafe', gender = $genderSql, blood_group = $bloodSql, notes = $notesSql
+            WHERE id = $id AND parent_id = $pid");
 
         if ($new['dob'] !== $child['dob']) {
-            
-            $pdo->prepare('UPDATE child_vaccinations cv JOIN vaccines v ON v.id = cv.vaccine_id
-                           SET cv.due_date = DATE_ADD(?, INTERVAL v.age_in_days DAY) WHERE cv.child_id = ?')
-                ->execute([$new['dob'], $id]);
+            // Date of birth badli to due dates dobara calculate karo
+            mysqli_query($conn, "UPDATE child_vaccinations cv JOIN vaccines v ON v.id = cv.vaccine_id
+                SET cv.due_date = DATE_ADD('$dobSafe', INTERVAL v.age_in_days DAY)
+                WHERE cv.child_id = $id");
         }
         flash('success', 'Child details updated.');
         redirect('children.php');

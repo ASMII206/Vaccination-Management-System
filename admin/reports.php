@@ -12,10 +12,13 @@ $hospitalId = (int)($_GET['hospital'] ?? 0);
 $outcome = $_GET['outcome'] ?? '';
 if (!in_array($outcome, ['Vaccinated', 'Not Vaccinated', 'Pending'], true)) $outcome = '';
 
-$vaccines = $pdo->query('SELECT id, name FROM vaccines ORDER BY name')->fetchAll();
-$hospitals = $pdo->query('SELECT id, name FROM hospitals ORDER BY name')->fetchAll();
+$result = mysqli_query($conn, "SELECT id, name FROM vaccines ORDER BY name");
+$vaccines = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-$hasRemarks = has_column($pdo, 'appointments', 'remarks');
+$result = mysqli_query($conn, "SELECT id, name FROM hospitals ORDER BY name");
+$hospitals = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+$hasRemarks = has_column('appointments', 'remarks');
 
 
 $sql = "SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status, " . ($hasRemarks ? 'a.remarks' : 'NULL') . " AS remarks,
@@ -27,21 +30,18 @@ $sql = "SELECT a.id, a.appointment_date, a.time_slot, a.vaccination_status, " . 
         JOIN hospitals h ON h.id = a.hospital_id
         JOIN parents p ON p.id = a.parent_id
         WHERE a.status = 'Approved'";
-$params = [];
-if ($from !== '') { $sql .= ' AND a.appointment_date >= ?'; $params[] = $from; }
-if ($to !== '')   { $sql .= ' AND a.appointment_date <= ?'; $params[] = $to; }
-if ($vaccineId)   { $sql .= ' AND cv.vaccine_id = ?'; $params[] = $vaccineId; }
-if ($hospitalId)  { $sql .= ' AND a.hospital_id = ?'; $params[] = $hospitalId; }
-if ($outcome !== '') { $sql .= ' AND a.vaccination_status = ?'; $params[] = $outcome; }
+if ($from !== '') { $sql .= " AND a.appointment_date >= '" . esc($from) . "'"; }
+if ($to !== '')   { $sql .= " AND a.appointment_date <= '" . esc($to) . "'"; }
+if ($vaccineId)   { $sql .= " AND cv.vaccine_id = $vaccineId"; }
+if ($hospitalId)  { $sql .= " AND a.hospital_id = $hospitalId"; }
+if ($outcome !== '') { $sql .= " AND a.vaccination_status = '" . esc($outcome) . "'"; }
 if ($search !== '') {
-    $sql .= ' AND (c.name LIKE ? OR p.full_name LIKE ?)';
-    $like = '%' . $search . '%';
-    array_push($params, $like, $like);
+    $like = esc($search);
+    $sql .= " AND (c.name LIKE '%$like%' OR p.full_name LIKE '%$like%')";
 }
 $sql .= ' ORDER BY a.appointment_date DESC, c.name, a.id';
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$rows = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 if (isset($_GET['export'])) {
     $out = [];
@@ -60,7 +60,7 @@ foreach ($rows as $r) {
 
 
  
-$progress = $pdo->query("
+$result = mysqli_query($conn, "
     SELECT
         c.id,
         c.name,
@@ -88,7 +88,8 @@ $progress = $pdo->query("
     FROM children c
     JOIN parents p ON p.id = c.parent_id
     ORDER BY c.name
-")->fetchAll();
+");
+$progress = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
 $filtered = ($from !== '' || $to !== '' || $search !== '' || $vaccineId || $hospitalId || $outcome !== '');

@@ -8,11 +8,8 @@ $active = 'vaccinations.php';
 $pid = parent_id();
 $childFilter = (int)($_GET['child'] ?? 0);
 
-$q = $pdo->prepare(
-    'SELECT id, name FROM children WHERE parent_id = ? ORDER BY name'
-);
-$q->execute([$pid]);
-$children = $q->fetchAll();
+$result = mysqli_query($conn, "SELECT id, name FROM children WHERE parent_id = $pid ORDER BY name");
+$children = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
 $sql = "
@@ -48,22 +45,17 @@ $sql = "
     INNER JOIN children c ON c.id = cv.child_id
     INNER JOIN vaccines v ON v.id = cv.vaccine_id
 
-    WHERE c.parent_id = ?
+    WHERE c.parent_id = $pid
 ";
 
-$params = [$pid];
-
-
 if ($childFilter) {
-    $sql .= ' AND cv.child_id = ?';
-    $params[] = $childFilter;
+    $sql .= " AND cv.child_id = $childFilter";
 }
 
 $sql .= ' ORDER BY c.name, cv.due_date';
 
-$q = $pdo->prepare($sql);
-$q->execute($params);
-$rows = $q->fetchAll();
+$result = mysqli_query($conn, $sql);
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include 'includes/layout_top.php';
 ?>

@@ -8,18 +8,18 @@ $active = 'hospitals.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     $id = (int)($_POST['id'] ?? 0);
-    $q = $pdo->prepare('SELECT name FROM hospitals WHERE id = ?');
-    $q->execute([$id]);
-    $name = $q->fetchColumn();
-    if ($name === false) {
+    $result = mysqli_query($conn, "SELECT name FROM hospitals WHERE id = $id");
+    $row = mysqli_fetch_assoc($result);
+    if (!$row) {
         flash('error', 'Hospital not found.');
     } else {
-        $c = $pdo->prepare('SELECT COUNT(*) FROM appointments WHERE hospital_id = ?');
-        $c->execute([$id]);
-        if ((int)$c->fetchColumn() > 0) {
+        $name = $row['name'];
+        $result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE hospital_id = $id");
+        $count = mysqli_fetch_row($result);
+        if ((int)$count[0] > 0) {
             flash('error', $name . ' cannot be deleted because it has booking records. You can edit its details instead.');
         } else {
-            $pdo->prepare('DELETE FROM hospitals WHERE id = ?')->execute([$id]);
+            mysqli_query($conn, "DELETE FROM hospitals WHERE id = $id");
             flash('success', $name . ' was deleted.');
         }
     }
@@ -27,12 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $search = trim($_GET['q'] ?? '');
-$like = '%' . $search . '%';
-$hasLogin = has_column($pdo, 'hospitals', 'email');
-$q = $pdo->prepare('SELECT h.*, (SELECT COUNT(*) FROM appointments a WHERE a.hospital_id = h.id) AS bookings
-    FROM hospitals h WHERE h.name LIKE ? OR h.location LIKE ? OR h.address LIKE ? ORDER BY h.name');
-$q->execute([$like, $like, $like]);
-$rows = $q->fetchAll();
+$searchSafe = esc($search);
+$hasLogin = has_column('hospitals', 'email');
+$result = mysqli_query($conn, "SELECT h.*, (SELECT COUNT(*) FROM appointments a WHERE a.hospital_id = h.id) AS bookings
+    FROM hospitals h
+    WHERE h.name LIKE '%$searchSafe%' OR h.location LIKE '%$searchSafe%' OR h.address LIKE '%$searchSafe%'
+    ORDER BY h.name");
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include __DIR__ . '/includes/layout_top.php';
 ?>

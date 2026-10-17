@@ -17,7 +17,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 date_default_timezone_set('Asia/Karachi');
 
-/* Local database connection */
+/* Database connection */
+mysqli_report(MYSQLI_REPORT_OFF);
+
 $conn = mysqli_connect(
     $host,
     $username,
@@ -31,20 +33,21 @@ if (!$conn) {
 
 mysqli_set_charset($conn, "utf8mb4");
 
-/* PDO database connection */
-try {
-    $pdo = new PDO(
-        'mysql:host=' . $host . ';dbname=' . $database . ';charset=utf8mb4',
-        $username,
-        $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-} catch (PDOException $ex) {
-    die("PDO database connection failed. Check XAMPP MySQL and the vaccination_db database.");
+/* Ab se database errors exception ban jayenge (try/catch me kaam aaye) */
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+/* Text ko SQL query ke liye safe banao */
+function esc($value) {
+    global $conn;
+    return mysqli_real_escape_string($conn, (string)$value);
+}
+
+/* Khali value ho to NULL, warna 'value' (quotes ke saath) */
+function nullable($value) {
+    if ($value === '' || $value === null) {
+        return 'NULL';
+    }
+    return "'" . esc($value) . "'";
 }
 
 /* Escape output */
@@ -153,24 +156,21 @@ function hospital_id() {
 }
 
 /* Check database column */
-function has_column(PDO $pdo, $table, $column) {
-    static $cache = [];
+function has_column($table, $column) {
+    global $conn;
 
-    $key = $table . '.' . $column;
+    $table = esc($table);
+    $column = esc($column);
 
-    if (!isset($cache[$key])) {
-        $q = $pdo->prepare(
-            'SELECT COUNT(*) FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA = DATABASE()
-             AND TABLE_NAME = ?
-             AND COLUMN_NAME = ?'
-        );
+    $sql = "SELECT COUNT(*) FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = '$table'
+            AND COLUMN_NAME = '$column'";
 
-        $q->execute([$table, $column]);
-        $cache[$key] = (bool)$q->fetchColumn();
-    }
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_row($result);
 
-    return $cache[$key];
+    return (bool)$row[0];
 }
 
 /* Format date */
@@ -233,24 +233,22 @@ function badge($text) {
 }
 
 /* Generate child vaccination schedule */
-function generate_schedule(PDO $pdo, $childId, $dob) {
-    $vaccines = $pdo->query(
-        'SELECT id, age_in_days FROM vaccines'
-    )->fetchAll();
+function generate_schedule($childId, $dob) {
+    global $conn;
 
-    $ins = $pdo->prepare(
-        'INSERT IGNORE INTO child_vaccinations
-         (child_id, vaccine_id, due_date)
-         VALUES (?, ?, ?)'
-    );
+    $result = mysqli_query($conn, "SELECT id, age_in_days FROM vaccines");
 
-    foreach ($vaccines as $v) {
+    while ($v = mysqli_fetch_assoc($result)) {
         $due = date(
             'Y-m-d',
             strtotime($dob . ' +' . (int)$v['age_in_days'] . ' days')
         );
 
-        $ins->execute([$childId, $v['id'], $due]);
+        $childId = (int)$childId;
+        $vaccineId = (int)$v['id'];
+
+        mysqli_query($conn, "INSERT IGNORE INTO child_vaccinations
+            (child_id, vaccine_id, due_date)
+            VALUES ($childId, $vaccineId, '$due')");
     }
 }
-
