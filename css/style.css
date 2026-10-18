@@ -759,11 +759,10 @@ nav a:hover { color: #f9a602; }
     }
 }
 
-
-
-
-
-
+.last{
+    display: flex;
+    justify-content: center;
+}
 
 .features {
     position: relative;

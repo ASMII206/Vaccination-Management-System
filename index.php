@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <section class="contact-section" id="contact">
        <div class="contact-info">
-                <h2>Get in touch</h2>
+                <h2 class="last">Get in touch</h2>
                 <ul>
                     <li>  <i class="fa-solid fa-clock"></i></i><strong>SCHEDULE</strong>Sun-Fri:9AM-6PM</li>
                     <li> <i class="fa-solid fa-location-dot"></i><strong>LOCATION</strong>Karachi,Pakistan</li>
