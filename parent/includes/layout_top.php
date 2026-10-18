@@ -27,11 +27,13 @@ $initial = mb_strtoupper(mb_substr($_SESSION['user_name'] ?? 'P', 0, 1));
     <aside class="p-side">
         <a class="p-brand" href="../index.php"><img src="../images/final bg logo.png" alt="VaxCare"></a>
         <nav class="p-nav">
-            <?php foreach ($nav as $file => $item): ?>
-                <a href="<?= $file ?>" class="<?= $active === $file ? 'active' : '' ?>">
-                    <i class="fa-solid <?= $item[1] ?>"></i><?= e($item[0]) ?>
-                </a>
-            <?php endforeach; ?>
+            
+<?php foreach ($nav as $file => $navItem): ?>
+    <a href="<?= $file ?>" class="<?= $active === $file ? 'active' : '' ?>">
+        <i class="fa-solid <?= $navItem[1] ?>"></i><?= e($navItem[0]) ?>
+    </a>
+<?php endforeach; ?>
+
         </nav>
     </aside>
     <div class="p-overlay" id="pOverlay"></div>
