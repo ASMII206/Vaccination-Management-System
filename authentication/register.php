@@ -1,39 +1,71 @@
-<?php
-require_once __DIR__ . '/../includes/config.php';
-if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
-    redirect('../' . $url);
-}
-$fields = [
-    'role', 'name', 'email', 'phone', 'address', 'location',
-    'child_name', 'child_dob', 'hospital', 'vaccine_date'
-];
-$old = array_fill_keys($fields, '');
 
-if (isset($_GET['role']) && in_array($_GET['role'], ['parent', 'hospital'], true)) {
-    $old['role'] = $_GET['role'];
+<?php
+include_once __DIR__ . '/../includes/config.php';
+
+// Agar user pehle se login hai, usay uske portal par bhej do
+if (!empty($_SESSION['role'])) {
+    $url = portal_url($_SESSION['role']);
+
+    if ($url) {
+        redirect('../' . $url);
+    }
 }
+
+// Registration form ki fields
+$fields = [
+    'role' => '',
+    'name' => '',
+    'email' => '',
+    'phone' => '',
+    'address' => '',
+    'location' => '',
+    'child_name' => '',
+    'child_dob' => '',
+    'hospital' => '',
+    'vaccine_date' => ''
+];
+
+$old = $fields;
+
+// URL se Parent ya Hospital select kiya gaya ho
+if (isset($_GET['role'])) {
+    if (in_array($_GET['role'], ['parent', 'hospital'], true)) {
+        $old['role'] = $_GET['role'];
+    }
+}
+
 $errors = [];
 $notice = flash();
 $loginError = '';
 $loginEmail = '';
+
+// Default view login hai, role select ho to registration khulegi
 $startView = isset($_GET['role']) ? 'register' : 'login';
 
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    ($_POST['form_type'] ?? '') === 'login'
-) {
+
+// ==================== LOGIN ====================
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'login') {
+
     $loginEmail = strtolower(trim($_POST['email'] ?? ''));
     $loginPassword = $_POST['password'] ?? '';
     $account = null;
 
     if (!csrf_valid()) {
         $loginError = 'Your session expired. Please try again.';
-    } elseif ($loginEmail === '' || $loginPassword === '') {
+
+    } elseif ($loginEmail == '' || $loginPassword == '') {
         $loginError = 'Please enter your email and password.';
+
     } else {
+
         $loginEmailSafe = esc($loginEmail);
 
-        $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM parents WHERE email = '$loginEmailSafe'");
+        // Parent account check
+        $result = mysqli_query($conn, "SELECT id, full_name, password_hash
+            FROM parents
+            WHERE email = '$loginEmailSafe'");
+
         $row = mysqli_fetch_assoc($result);
 
         if ($row && password_verify($loginPassword, $row['password_hash'])) {
@@ -44,83 +76,110 @@ if (
             ];
         }
 
+        // Hospital account check
         if (!$account) {
             try {
-                $result = mysqli_query($conn, "SELECT id, name, password_hash FROM hospitals WHERE email = '$loginEmailSafe'");
+                $result = mysqli_query($conn, "SELECT id, name, password_hash
+                    FROM hospitals
+                    WHERE email = '$loginEmailSafe'");
+
                 $row = mysqli_fetch_assoc($result);
-                if (
-                    $row &&
-                    !empty($row['password_hash']) &&
-                    password_verify($loginPassword, $row['password_hash'])
-                ) {
-                    $account = [
-                        'role' => 'hospital',
-                        'id' => (int) $row['id'],
-                        'name' => $row['name']
-                    ];
+
+                if ($row && !empty($row['password_hash'])) {
+                    if (password_verify($loginPassword, $row['password_hash'])) {
+                        $account = [
+                            'role' => 'hospital',
+                            'id' => (int) $row['id'],
+                            'name' => $row['name']
+                        ];
+                    }
                 }
+
             } catch (mysqli_sql_exception $ex) {
+                // Hospital table ki query fail ho to agla account check hoga
             }
         }
 
+        // Admin account check
         if (!$account) {
             try {
-                $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM admins WHERE email = '$loginEmailSafe'");
+                $result = mysqli_query($conn, "SELECT id, full_name, password_hash
+                    FROM admins
+                    WHERE email = '$loginEmailSafe'");
+
                 $row = mysqli_fetch_assoc($result);
 
-                if (
-                    $row &&
-                    !empty($row['password_hash']) &&
-                    password_verify($loginPassword, $row['password_hash'])
-                ) {
-                    $account = [
-                        'role' => 'admin',
-                        'id' => (int) $row['id'],
-                        'name' => $row['full_name']
-                    ];
+                if ($row && !empty($row['password_hash'])) {
+                    if (password_verify($loginPassword, $row['password_hash'])) {
+                        $account = [
+                            'role' => 'admin',
+                            'id' => (int) $row['id'],
+                            'name' => $row['full_name']
+                        ];
+                    }
                 }
+
             } catch (mysqli_sql_exception $ex) {
                 $loginError = 'Admin login error: ' . $ex->getMessage();
             }
         }
 
+        // Login successful ho to portal open karo
         if (!$account) {
-            if ($loginError === '') {
+
+            if ($loginError == '') {
                 $loginError = 'Wrong email or password.';
             }
-        } elseif (!($url = portal_url($account['role']))) {
-            $loginError = 'Your ' . $account['role'] .
-                          ' account was verified, but that portal is not available yet.';
-        } else {
-            session_regenerate_id(true);
-            $_SESSION['role'] = $account['role'];
-            $_SESSION['user_id'] = $account['id'];
-            $_SESSION['user_name'] = $account['name'];
 
-            redirect('../' . $url);
+        } else {
+            $url = portal_url($account['role']);
+
+            if (!$url) {
+                $loginError = 'Your ' . $account['role'] .
+                    ' account was verified, but that portal is not available yet.';
+
+            } else {
+                session_regenerate_id(true);
+
+                $_SESSION['role'] = $account['role'];
+                $_SESSION['user_id'] = $account['id'];
+                $_SESSION['user_name'] = $account['name'];
+
+                redirect('../' . $url);
+            }
         }
     }
 }
 
+
+// ==================== HOSPITAL LIST ====================
+
 $hospitalList = [];
-$hospitalResult = mysqli_query($conn, 'SELECT name FROM hospitals ORDER BY name');
-while ($hospitalRow = mysqli_fetch_row($hospitalResult)) {
-    $hospitalList[] = $hospitalRow[0];
+
+$result = mysqli_query($conn, "SELECT name FROM hospitals ORDER BY name");
+
+while ($row = mysqli_fetch_row($result)) {
+    $hospitalList[] = $row[0];
 }
 
-function valid_date($d) {
-    $dt = DateTime::createFromFormat('Y-m-d', $d);
-    return $dt && $dt->format('Y-m-d') === $d;
+
+// Date check karne ka function
+function valid_date($date) {
+    $newDate = DateTime::createFromFormat('Y-m-d', $date);
+
+    return $newDate && $newDate->format('Y-m-d') == $date;
 }
 
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    ($_POST['form_type'] ?? '') === 'register'
-) {
+
+// ==================== REGISTRATION ====================
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'register') {
+
     $startView = 'register';
 
-    foreach ($fields as $f) {
-        $old[$f] = trim($_POST[$f] ?? '');
+    // Form ki values dobara fill karo
+    foreach ($fields as $field => $value) {
+        $old[$field] = trim($_POST[$field] ?? '');
     }
 
     $old['email'] = strtolower($old['email']);
@@ -128,10 +187,13 @@ if (
     $password = $_POST['password'] ?? '';
     $confirm = $_POST['confirm_password'] ?? '';
     $role = $old['role'];
+
     $today = date('Y-m-d');
     $hasChild = false;
     $hospitalId = null;
 
+
+    // Session aur form validation
     if (!csrf_valid()) {
         $errors[] = 'Your session expired. Please try again.';
     }
@@ -155,7 +217,7 @@ if (
         $errors[] = 'Password must be at least 8 characters.';
     }
 
-    if ($password !== $confirm) {
+    if ($password != $confirm) {
         $errors[] = 'Passwords do not match.';
     }
 
@@ -163,7 +225,7 @@ if (
         $errors[] = 'Enter a valid phone number.';
     }
 
-    if ($old['address'] === '' || mb_strlen($old['address']) > 255) {
+    if ($old['address'] == '' || mb_strlen($old['address']) > 255) {
         $errors[] = 'Address is required.';
     }
 
@@ -171,15 +233,20 @@ if (
         $errors[] = 'Please accept the terms of service and privacy policy.';
     }
 
-    if ($emailOk) {
 
+    // Check karo ke email pehle se registered to nahi
+    if ($emailOk) {
         $emailSafe = esc($old['email']);
 
-        $result = mysqli_query($conn, "SELECT 1 FROM parents WHERE email = '$emailSafe' LIMIT 1");
+        $result = mysqli_query($conn, "SELECT 1 FROM parents
+            WHERE email = '$emailSafe' LIMIT 1");
+
         $taken = mysqli_num_rows($result) > 0;
 
         if (!$taken) {
-            $result = mysqli_query($conn, "SELECT 1 FROM hospitals WHERE email = '$emailSafe' LIMIT 1");
+            $result = mysqli_query($conn, "SELECT 1 FROM hospitals
+                WHERE email = '$emailSafe' LIMIT 1");
+
             $taken = mysqli_num_rows($result) > 0;
         }
 
@@ -188,66 +255,65 @@ if (
         }
     }
 
-    if ($role === 'parent') {
 
-        $hasChild = (
-            $old['child_name'] !== '' ||
-            $old['child_dob'] !== ''
-        );
+    // ==================== PARENT VALIDATION ====================
+
+    if ($role == 'parent') {
+
+        // Child details optional hain
+        if ($old['child_name'] != '' || $old['child_dob'] != '') {
+            $hasChild = true;
+        }
 
         if ($hasChild) {
 
-            if (
-                mb_strlen($old['child_name']) < 2 ||
-                mb_strlen($old['child_name']) > 100
-            ) {
+            if (mb_strlen($old['child_name']) < 2 || mb_strlen($old['child_name']) > 100) {
                 $errors[] = "Enter your child's name.";
             }
 
-            if (
-                !valid_date($old['child_dob']) ||
-                $old['child_dob'] > $today
-            ) {
+            if (!valid_date($old['child_dob']) || $old['child_dob'] > $today) {
                 $errors[] = "Enter a valid date of birth for your child.";
             }
         }
 
-        if ($old['hospital'] !== '' || $old['vaccine_date'] !== '') {
+
+        // Hospital booking ki details check karo
+        if ($old['hospital'] != '' || $old['vaccine_date'] != '') {
 
             if (!$hasChild) {
                 $errors[] = "Add your child's name and date of birth to request a booking.";
 
-            } elseif (
-                $old['hospital'] === '' ||
-                $old['vaccine_date'] === ''
-            ) {
+            } elseif ($old['hospital'] == '' || $old['vaccine_date'] == '') {
                 $errors[] = 'Enter both the hospital and vaccination date, or leave both empty.';
 
             } else {
 
-                if (
-                    !valid_date($old['vaccine_date']) ||
-                    $old['vaccine_date'] < $today
-                ) {
+                if (!valid_date($old['vaccine_date']) || $old['vaccine_date'] < $today) {
                     $errors[] = 'Vaccination date must be today or a future date.';
                 }
 
                 $hospitalSafe = esc($old['hospital']);
                 $found = [];
 
-                $result = mysqli_query($conn, "SELECT id FROM hospitals WHERE LOWER(name) = LOWER('$hospitalSafe')");
+                // Hospital ka exact naam check karo
+                $result = mysqli_query($conn, "SELECT id FROM hospitals
+                    WHERE LOWER(name) = LOWER('$hospitalSafe')");
+
                 while ($row = mysqli_fetch_assoc($result)) {
                     $found[] = $row['id'];
                 }
 
+                // Exact match na mile to partial name check karo
                 if (!$found) {
-                    $result = mysqli_query($conn, "SELECT id FROM hospitals WHERE name LIKE '%$hospitalSafe%'");
+                    $result = mysqli_query($conn, "SELECT id FROM hospitals
+                        WHERE name LIKE '%$hospitalSafe%'");
+
                     while ($row = mysqli_fetch_assoc($result)) {
                         $found[] = $row['id'];
                     }
                 }
 
-                if (count($found) === 1) {
+                if (count($found) == 1) {
                     $hospitalId = (int) $found[0];
                 } else {
                     $errors[] = 'Please choose a hospital from the suggestions list.';
@@ -255,21 +321,25 @@ if (
             }
         }
 
-    } elseif ($role === 'hospital') {
 
-        if (
-            $old['location'] === '' ||
-            mb_strlen($old['location']) > 100
-        ) {
+    // ==================== HOSPITAL VALIDATION ====================
+
+    } elseif ($role == 'hospital') {
+
+        if ($old['location'] == '' || mb_strlen($old['location']) > 100) {
             $errors[] = 'Enter the hospital location (city / area).';
         }
 
         try {
             mysqli_query($conn, "SELECT email, password_hash FROM hospitals LIMIT 1");
+
         } catch (mysqli_sql_exception $ex) {
             $errors[] = 'Hospital registration requires email and password_hash columns in the hospitals table.';
         }
     }
+
+
+    // ==================== SAVE REGISTRATION ====================
 
     if (!$errors) {
 
@@ -283,25 +353,34 @@ if (
             $phoneSafe = esc($old['phone']);
             $addressSafe = esc($old['address']);
 
-            if ($role === 'parent') {
 
-                mysqli_query($conn, "INSERT INTO parents (full_name, email, phone, address, password_hash)
+            // Parent register karo
+            if ($role == 'parent') {
+
+                mysqli_query($conn, "INSERT INTO parents
+                    (full_name, email, phone, address, password_hash)
                     VALUES ('$nameSafe', '$emailSafe', '$phoneSafe', '$addressSafe', '$hash')");
 
                 $parentId = (int) mysqli_insert_id($conn);
 
+
+                // Child ki details save karo
                 if ($hasChild) {
 
                     $childNameSafe = esc($old['child_name']);
                     $childDobSafe = esc($old['child_dob']);
 
-                    mysqli_query($conn, "INSERT INTO children (parent_id, name, dob)
+                    mysqli_query($conn, "INSERT INTO children
+                        (parent_id, name, dob)
                         VALUES ($parentId, '$childNameSafe', '$childDobSafe')");
 
                     $childId = (int) mysqli_insert_id($conn);
 
+                    // Child ka vaccination schedule banao
                     generate_schedule($childId, $old['child_dob']);
 
+
+                    // Hospital select kiya ho to appointment banao
                     if ($hospitalId) {
 
                         $result = mysqli_query($conn, "
@@ -309,13 +388,13 @@ if (
                             FROM child_vaccinations cv
                             JOIN vaccines v ON v.id = cv.vaccine_id
                             WHERE cv.child_id = $childId
-                              AND v.availability = 'Available'
-                              AND NOT EXISTS (
-                                  SELECT 1
-                                  FROM appointments a
-                                  WHERE a.child_vaccination_id = cv.id
-                                    AND a.vaccination_status = 'Vaccinated'
-                              )
+                            AND v.availability = 'Available'
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM appointments a
+                                WHERE a.child_vaccination_id = cv.id
+                                AND a.vaccination_status = 'Vaccinated'
+                            )
                             ORDER BY cv.due_date, cv.id
                             LIMIT 1
                         ");
@@ -333,6 +412,8 @@ if (
                     }
                 }
 
+
+            // Hospital register karo
             } else {
 
                 $locationSafe = esc($old['location']);
@@ -342,12 +423,17 @@ if (
                     VALUES ('$nameSafe', '$addressSafe', '$locationSafe', '$phoneSafe', '$emailSafe', '$hash')");
             }
 
+
+            // Data save ho gaya
             mysqli_commit($conn);
 
             flash('success', 'Registration successful. Please log in.');
             redirect('register.php');
 
+
         } catch (mysqli_sql_exception $e) {
+
+            // Error aaye to database changes undo karo
             try {
                 mysqli_rollback($conn);
             } catch (mysqli_sql_exception $rollbackError) {
@@ -360,6 +446,7 @@ if (
 
 $today = date('Y-m-d');
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
