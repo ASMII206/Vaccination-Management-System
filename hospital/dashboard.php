@@ -3,29 +3,29 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $pageTitle = 'Dashboard';
 $active = 'dashboard.php';
 $today = date('Y-m-d');
-$q = $pdo->prepare("SELECT COUNT(*) AS total,
+$result = mysqli_query($conn, "SELECT COUNT(*) AS total,
         COALESCE(SUM(vaccination_status = 'Pending'), 0) AS scheduled,
         COALESCE(SUM(vaccination_status = 'Vaccinated'), 0) AS vaccinated,
         COALESCE(SUM(vaccination_status = 'Not Vaccinated'), 0) AS not_vaccinated
-    FROM appointments WHERE hospital_id = ? AND status = 'Approved'");
-$q->execute([$hid]);
-$s = $q->fetch();
+    FROM appointments WHERE hospital_id = $hid AND status = 'Approved'");
+$s = mysqli_fetch_assoc($result);
 $total = (int)$s['total'];
 $scheduled = (int)$s['scheduled'];
 $vaccinated = (int)$s['vaccinated'];
 $notVaccinated = (int)$s['not_vaccinated'];
-$q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND status = 'Approved' AND vaccination_status = 'Pending' AND appointment_date < ?");
-$q->execute([$hid, $today]);
-$needOutcome = (int)$q->fetchColumn();
-$q = $pdo->prepare("SELECT a.id, a.appointment_date, a.time_slot, c.name AS child_name, v.name AS vaccine_name
+
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE hospital_id = $hid AND status = 'Approved' AND vaccination_status = 'Pending' AND appointment_date < '$today'");
+$row = mysqli_fetch_row($result);
+$needOutcome = (int)$row[0];
+
+$result = mysqli_query($conn, "SELECT a.id, a.appointment_date, a.time_slot, c.name AS child_name, v.name AS vaccine_name
     FROM appointments a
     JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
     JOIN children c ON c.id = cv.child_id
     JOIN vaccines v ON v.id = cv.vaccine_id
-    WHERE a.hospital_id = ? AND a.status = 'Approved' AND a.vaccination_status = 'Pending' AND a.appointment_date >= ?
+    WHERE a.hospital_id = $hid AND a.status = 'Approved' AND a.vaccination_status = 'Pending' AND a.appointment_date >= '$today'
     ORDER BY a.appointment_date, a.id LIMIT 5");
-$q->execute([$hid, $today]);
-$next = $q->fetchAll();
+$next = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 $decided = $vaccinated + $notVaccinated;
 $rate = $decided ? round($vaccinated / $decided * 100) : null;

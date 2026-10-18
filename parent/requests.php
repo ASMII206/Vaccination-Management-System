@@ -9,22 +9,21 @@ $pid = parent_id();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
     
-    $st = $pdo->prepare("UPDATE appointments SET status = 'Cancelled' WHERE id = ? AND parent_id = ? AND status = 'Pending'");
-    $st->execute([(int)($_POST['id'] ?? 0), $pid]);
-    if ($st->rowCount()) flash('success', 'Request cancelled.');
+    $requestId = (int)($_POST['id'] ?? 0);
+    mysqli_query($conn, "UPDATE appointments SET status = 'Cancelled' WHERE id = $requestId AND parent_id = $pid AND status = 'Pending'");
+    if (mysqli_affected_rows($conn) > 0) flash('success', 'Request cancelled.');
     else flash('error', 'Only pending requests can be cancelled.');
     redirect('requests.php');
 }
 
-$q = $pdo->prepare('SELECT a.*, h.name AS hospital, c.name AS child_name, v.name AS vaccine_name
+$result = mysqli_query($conn, "SELECT a.*, h.name AS hospital, c.name AS child_name, v.name AS vaccine_name
     FROM appointments a
     JOIN hospitals h ON h.id = a.hospital_id
     JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
     JOIN children c ON c.id = cv.child_id
     JOIN vaccines v ON v.id = cv.vaccine_id
-    WHERE a.parent_id = ? ORDER BY a.created_at DESC, a.id DESC');
-$q->execute([$pid]);
-$rows = $q->fetchAll();
+    WHERE a.parent_id = $pid ORDER BY a.created_at DESC, a.id DESC");
+$rows = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include 'includes/layout_top.php';
 ?>

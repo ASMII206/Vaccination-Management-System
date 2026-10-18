@@ -9,7 +9,7 @@ $cvId = (int)($_GET['cv'] ?? $_POST['cv'] ?? 0);
 $slots = ['09:00 AM - 11:00 AM', '11:00 AM - 01:00 PM', '02:00 PM - 04:00 PM', '04:00 PM - 06:00 PM'];
 
 
-$q = $pdo->prepare("
+$result = mysqli_query($conn, "
     SELECT
         cv.id,
         cv.child_id,
@@ -41,13 +41,11 @@ $q = $pdo->prepare("
     FROM child_vaccinations cv
     JOIN children c ON c.id = cv.child_id
     JOIN vaccines v ON v.id = cv.vaccine_id
-    WHERE cv.id = ?
-      AND c.parent_id = ?
+    WHERE cv.id = $cvId
+      AND c.parent_id = $pid
     LIMIT 1
 ");
-
-$q->execute([$cvId, $pid]);
-$item = $q->fetch();
+$item = mysqli_fetch_assoc($result);
 
 if (!$item) {
     flash('error', 'Vaccination entry not found.');
@@ -74,9 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $date = $_POST['appointment_date'] ?? '';
     $slot = $_POST['time_slot'] ?? '';
 
-    $h = $pdo->prepare('SELECT id FROM hospitals WHERE id = ?');
-    $h->execute([$picked]);
-    if (!$h->fetch()) $errors[] = 'Please select a hospital.';
+    $result = mysqli_query($conn, "SELECT id FROM hospitals WHERE id = $picked");
+    if (mysqli_num_rows($result) == 0) $errors[] = 'Please select a hospital.';
 
     $dt = DateTime::createFromFormat('Y-m-d', $date);
     if (!$dt || $dt->format('Y-m-d') !== $date || $date < date('Y-m-d')) $errors[] = 'Choose today or a future date.';
@@ -84,18 +81,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($item['availability'] === 'Unavailable') $errors[] = 'This vaccine is currently unavailable. Please try again later.';
 
     if (!$errors) {
-        $pdo->prepare('INSERT INTO appointments (child_vaccination_id, parent_id, hospital_id, appointment_date, time_slot) VALUES (?,?,?,?,?)')
-            ->execute([$cvId, $pid, $picked, $date, $slot]);
+        $dateSafe = esc($date);
+        $slotSafe = esc($slot);
+        mysqli_query($conn, "INSERT INTO appointments (child_vaccination_id, parent_id, hospital_id, appointment_date, time_slot)
+            VALUES ($cvId, $pid, $picked, '$dateSafe', '$slotSafe')");
         flash('success', 'Booking request sent. It will be confirmed once the admin approves it.');
         redirect('requests.php');
     }
 }
 
 $search = trim($_GET['q'] ?? '');
-$like = '%' . $search . '%';
-$q = $pdo->prepare('SELECT * FROM hospitals WHERE name LIKE ? OR location LIKE ? ORDER BY name');
-$q->execute([$like, $like]);
-$hospitals = $q->fetchAll();
+$searchSafe = esc($search);
+$result = mysqli_query($conn, "SELECT * FROM hospitals WHERE name LIKE '%$searchSafe%' OR location LIKE '%$searchSafe%' ORDER BY name");
+$hospitals = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include 'includes/layout_top.php';
 ?>

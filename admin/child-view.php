@@ -1,22 +1,18 @@
-
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 
 $pageTitle = 'Child Profile';
 $active = 'children.php';
-$id = (int)($_GET['id'] ?? 0);
+$id = (int) ($_GET['id'] ?? 0);
 
 
-$q = $pdo->prepare(
-    'SELECT c.*, p.full_name AS parent_name,
+$result = mysqli_query($conn, "SELECT c.*, p.full_name AS parent_name,
             p.email AS parent_email, p.phone AS parent_phone,
             p.address AS parent_address
      FROM children c
      JOIN parents p ON p.id = c.parent_id
-     WHERE c.id = ?'
-);
-$q->execute([$id]);
-$child = $q->fetch();
+     WHERE c.id = $id");
+$child = mysqli_fetch_assoc($result);
 
 if (!$child) {
     flash('error', 'Child not found.');
@@ -24,8 +20,7 @@ if (!$child) {
 }
 
 
-$q = $pdo->prepare(
-    "SELECT
+$result = mysqli_query($conn, "SELECT
         cv.id,
         cv.child_id,
         c.parent_id,
@@ -52,11 +47,9 @@ $q = $pdo->prepare(
      FROM child_vaccinations cv
      JOIN children c ON c.id = cv.child_id
      JOIN vaccines v ON v.id = cv.vaccine_id
-     WHERE cv.child_id = ?
-     ORDER BY cv.due_date"
-);
-$q->execute([$id]);
-$schedule = $q->fetchAll();
+     WHERE cv.child_id = $id
+     ORDER BY cv.due_date");
+$schedule = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 $done = 0;
 
@@ -71,8 +64,7 @@ $pct = $schedule
     : 0;
 
 
-$q = $pdo->prepare(
-    "SELECT
+$result = mysqli_query($conn, "SELECT
         a.id,
         a.appointment_date,
         a.time_slot,
@@ -85,11 +77,9 @@ $q = $pdo->prepare(
      JOIN child_vaccinations cv
         ON cv.id = a.child_vaccination_id
      JOIN vaccines v ON v.id = cv.vaccine_id
-     WHERE cv.child_id = ?
-     ORDER BY a.appointment_date DESC, a.id DESC"
-);
-$q->execute([$id]);
-$bookings = $q->fetchAll();
+     WHERE cv.child_id = $id
+     ORDER BY a.appointment_date DESC, a.id DESC");
+$bookings = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include __DIR__ . '/includes/layout_top.php';
 ?>

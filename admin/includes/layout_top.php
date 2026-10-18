@@ -10,8 +10,9 @@ $nav = [
     'hospitals.php'  => ['Hospitals',          'fa-hospital'],
     'bookings.php'   => ['Booking Details',    'fa-book-medical'],
 ];
-$q = $pdo->query("SELECT COUNT(*) FROM appointments WHERE status = 'Pending'");
-$pendingBadge = (int)$q->fetchColumn();
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE status = 'Pending'");
+$row = mysqli_fetch_row($result);
+$pendingBadge = (int)$row[0];
 $flash = flash();
 ?>
 <!DOCTYPE html>
@@ -37,9 +38,6 @@ $flash = flash();
                 </a>
             <?php endforeach; ?>
         </nav>
-        <div class="p-logout">
-            <a href="../authentication/logout.php"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
-        </div>
     </aside>
     <div class="p-overlay" id="pOverlay"></div>
 
@@ -47,9 +45,15 @@ $flash = flash();
         <header class="p-top">
             <button type="button" class="p-burger" id="pToggle" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
             <h1><?= e($pageTitle) ?></h1>
-            <div class="p-user">
-                <span class="p-avatar">A</span>
-                <div><strong>Administrator</strong><small>Admin</small></div>
+            <div class="p-user" id="pUser">
+                <button type="button" class="p-user-btn" id="pUserBtn" aria-haspopup="true" aria-expanded="false">
+                    <span class="p-avatar">A</span>
+                    <div><strong>Administrator</strong><small>Admin</small></div>
+                    <i class="fa-solid fa-chevron-down p-caret"></i>
+                </button>
+                <nav class="p-menu" id="pMenu">
+                    <a href="../authentication/logout.php"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
+                </nav>
             </div>
         </header>
 

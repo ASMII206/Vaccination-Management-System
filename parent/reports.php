@@ -6,21 +6,21 @@ $pageTitle = 'Vaccination Reports';
 $active = 'reports.php';
 $pid = parent_id();
 
-$q = $pdo->prepare('SELECT * FROM children WHERE parent_id = ? ORDER BY name');
-$q->execute([$pid]);
-$children = $q->fetchAll();
+$result = mysqli_query($conn, "SELECT * FROM children WHERE parent_id = $pid ORDER BY name");
+$children = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
-$q = $pdo->prepare("SELECT a.appointment_date, h.name AS hospital, cv.child_id, v.name AS vaccine_name
+$result = mysqli_query($conn, "SELECT a.appointment_date, h.name AS hospital, cv.child_id, v.name AS vaccine_name
     FROM appointments a
     JOIN hospitals h ON h.id = a.hospital_id
     JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
     JOIN vaccines v ON v.id = cv.vaccine_id
-    WHERE a.parent_id = ? AND a.vaccination_status = 'Vaccinated'
+    WHERE a.parent_id = $pid AND a.vaccination_status = 'Vaccinated'
     ORDER BY a.appointment_date DESC");
-$q->execute([$pid]);
 $byChild = [];
-foreach ($q->fetchAll() as $r) $byChild[$r['child_id']][] = $r;
+while ($r = mysqli_fetch_assoc($result)) {
+    $byChild[$r['child_id']][] = $r;
+}
 
 include 'includes/layout_top.php';
 ?>
@@ -30,7 +30,8 @@ include 'includes/layout_top.php';
 <?php endif; ?>
 
 <?php foreach ($children as $c):
-    $s = $pdo->prepare("
+    $childId = (int) $c['id'];
+    $result = mysqli_query($conn, "
     SELECT
         COUNT(*) AS total,
         COALESCE(SUM(
@@ -46,11 +47,9 @@ include 'includes/layout_top.php';
             END
         ), 0) AS done
     FROM child_vaccinations cv
-    WHERE cv.child_id = ?
+    WHERE cv.child_id = $childId
 ");
-
-$s->execute([$c['id']]);
-$p = $s->fetch();
+    $p = mysqli_fetch_assoc($result);
     $records = $byChild[$c['id']] ?? []; ?>
 <div class="card">
     <h2 class="card-title"><i class="fa-solid fa-file-medical"></i><?= e($c['name']) ?>

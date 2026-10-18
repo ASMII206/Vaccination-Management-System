@@ -10,11 +10,8 @@ $today = date('Y-m-d');
 $soon = date('Y-m-d', strtotime('+30 days'));
 
 
-$q = $pdo->prepare(
-    'SELECT * FROM children WHERE parent_id = ? ORDER BY name'
-);
-$q->execute([$pid]);
-$children = $q->fetchAll();
+$result = mysqli_query($conn, "SELECT * FROM children WHERE parent_id = $pid ORDER BY name");
+$children = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 $scheduleSql = "
     SELECT
@@ -44,7 +41,7 @@ $scheduleSql = "
     FROM child_vaccinations cv
     JOIN children c ON c.id = cv.child_id
     JOIN vaccines v ON v.id = cv.vaccine_id
-    WHERE c.parent_id = ?
+    WHERE c.parent_id = $pid
       AND NOT EXISTS (
           SELECT 1
           FROM appointments a
@@ -54,9 +51,8 @@ $scheduleSql = "
     ORDER BY cv.due_date
 ";
 
-$q = $pdo->prepare($scheduleSql);
-$q->execute([$pid]);
-$pending = $q->fetchAll();
+$result = mysqli_query($conn, $scheduleSql);
+$pending = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 
 $overdue = array_filter($pending, function ($r) use ($today) {
@@ -70,36 +66,27 @@ $upcoming = array_filter($pending, function ($r) use ($today, $soon) {
 });
 
 
-$q = $pdo->prepare(
-    "SELECT COUNT(*) FROM appointments
-     WHERE parent_id = ? AND status = 'Pending'"
-);
-$q->execute([$pid]);
-$pendingReq = (int) $q->fetchColumn();
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE parent_id = $pid AND status = 'Pending'");
+$row = mysqli_fetch_row($result);
+$pendingReq = (int) $row[0];
 
 
-$q = $pdo->prepare(
-    "SELECT COUNT(*) FROM appointments
-     WHERE parent_id = ? AND vaccination_status = 'Vaccinated'"
-);
-$q->execute([$pid]);
-$doneCount = (int) $q->fetchColumn();
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE parent_id = $pid AND vaccination_status = 'Vaccinated'");
+$row = mysqli_fetch_row($result);
+$doneCount = (int) $row[0];
 
 
-$q = $pdo->prepare(
-    "SELECT a.*, h.name AS hospital,
+$result = mysqli_query($conn, "SELECT a.*, h.name AS hospital,
             c.name AS child_name, v.name AS vaccine_name
      FROM appointments a
      JOIN hospitals h ON h.id = a.hospital_id
      JOIN child_vaccinations cv ON cv.id = a.child_vaccination_id
      JOIN children c ON c.id = cv.child_id
      JOIN vaccines v ON v.id = cv.vaccine_id
-     WHERE a.parent_id = ?
+     WHERE a.parent_id = $pid
      ORDER BY a.created_at DESC, a.id DESC
-     LIMIT 5"
-);
-$q->execute([$pid]);
-$recent = $q->fetchAll();
+     LIMIT 5");
+$recent = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
 include 'includes/layout_top.php';
 ?>
@@ -238,8 +225,8 @@ include 'includes/layout_top.php';
             </thead>
             <tbody>
             <?php foreach ($children as $c):
-                $q = $pdo->prepare(
-                    "SELECT
+                $childId = (int) $c['id'];
+                $result = mysqli_query($conn, "SELECT
                         COUNT(*) AS total,
                         COALESCE(SUM(
                             EXISTS (
@@ -250,10 +237,8 @@ include 'includes/layout_top.php';
                             )
                         ), 0) AS done
                      FROM child_vaccinations cv
-                     WHERE cv.child_id = ?"
-                );
-                $q->execute([$c['id']]);
-                $p = $q->fetch();
+                     WHERE cv.child_id = $childId");
+                $p = mysqli_fetch_assoc($result);
 
                 $total = (int) $p['total'];
                 $done = (int) $p['done'];

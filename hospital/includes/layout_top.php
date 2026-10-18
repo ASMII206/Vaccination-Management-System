@@ -4,9 +4,9 @@ $nav = [
     'dashboard.php' => ['Dashboard',               'fa-gauge'],
     'manage.php'    => ['Appointments & Profile',  'fa-calendar-check'],
 ];
-$q = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE hospital_id = ? AND status = 'Approved' AND vaccination_status = 'Pending'");
-$q->execute([$hid]);
-$scheduledCount = (int)$q->fetchColumn();
+$result = mysqli_query($conn, "SELECT COUNT(*) FROM appointments WHERE hospital_id = $hid AND status = 'Approved' AND vaccination_status = 'Pending'");
+$row = mysqli_fetch_row($result);
+$scheduledCount = (int)$row[0];
 $flash = flash();
 $initial = mb_strtoupper(mb_substr($hospital['name'] ?? 'H', 0, 1));
 ?>
@@ -38,9 +38,6 @@ $initial = mb_strtoupper(mb_substr($hospital['name'] ?? 'H', 0, 1));
                 </a>
             <?php endforeach; ?>
         </nav>
-        <div class="p-logout">
-            <a href="../authentication/logout.php"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
-        </div>
     </aside>
     <div class="p-overlay" id="pOverlay"></div>
 
@@ -49,9 +46,15 @@ $initial = mb_strtoupper(mb_substr($hospital['name'] ?? 'H', 0, 1));
             <button type="button" class="p-burger" id="pToggle" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
             <h1><?= e($pageTitle) ?></h1>
             <div class="p-date"><i class="fa-regular fa-calendar"></i><?= date('D, d M Y') ?></div>
-            <div class="p-user">
-                <span class="p-avatar"><?= e($initial) ?></span>
-                <div><strong><?= e($hospital['name']) ?></strong><small>Hospital</small></div>
+            <div class="p-user" id="pUser">
+                <button type="button" class="p-user-btn" id="pUserBtn" aria-haspopup="true" aria-expanded="false">
+                    <span class="p-avatar"><?= e($initial) ?></span>
+                    <div><strong><?= e($hospital['name']) ?></strong><small>Hospital</small></div>
+                    <i class="fa-solid fa-chevron-down p-caret"></i>
+                </button>
+                <nav class="p-menu" id="pMenu">
+                    <a href="../authentication/logout.php"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
+                </nav>
             </div>
         </header>
 

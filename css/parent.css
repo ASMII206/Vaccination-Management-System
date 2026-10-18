@@ -299,3 +299,30 @@ label.lbl:first-child { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) {
     * { transition-duration: 0.01ms !important; }
 }
+
+/* ---------- Profile dropdown (logout) ---------- */
+.p-user { position: relative; }
+.p-user-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 4px 10px 4px 4px; border: none; border-radius: 14px;
+    background: none; cursor: pointer; font-family: inherit; text-align: left;
+    transition: background 0.2s;
+}
+.p-user-btn:hover, .p-user.open .p-user-btn { background: var(--bg); }
+.p-caret { font-size: 11px; color: var(--muted); transition: transform 0.2s; }
+.p-user.open .p-caret { transform: rotate(180deg); }
+.p-menu {
+    display: none; position: absolute; right: 0; top: calc(100% + 10px);
+    min-width: 170px; padding: 6px;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); z-index: 60;
+}
+.p-user.open .p-menu { display: block; }
+.p-menu a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 8px;
+    color: #e08f00; font-size: 14px; font-weight: bold; text-decoration: none;
+}
+.p-menu a:hover { background: #fdeaea; }
+.p-menu a i { width: 16px; text-align: center; }
+
