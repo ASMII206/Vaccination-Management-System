@@ -1,23 +1,18 @@
 <?php
 require_once __DIR__ . '/../includes/config.php';
-
 if (!empty($_SESSION['role']) && ($url = portal_url($_SESSION['role']))) {
     redirect('../' . $url);
 }
-
 $fields = [
     'role', 'name', 'email', 'phone', 'address', 'location',
     'child_name', 'child_dob', 'hospital', 'vaccine_date'
 ];
-
 $old = array_fill_keys($fields, '');
 
 if (isset($_GET['role']) && in_array($_GET['role'], ['parent', 'hospital'], true)) {
     $old['role'] = $_GET['role'];
 }
-
 $errors = [];
-
 $notice = flash();
 $loginError = '';
 $loginEmail = '';
@@ -53,7 +48,6 @@ if (
             try {
                 $result = mysqli_query($conn, "SELECT id, name, password_hash FROM hospitals WHERE email = '$loginEmailSafe'");
                 $row = mysqli_fetch_assoc($result);
-
                 if (
                     $row &&
                     !empty($row['password_hash']) &&

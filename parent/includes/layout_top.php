@@ -33,9 +33,6 @@ $initial = mb_strtoupper(mb_substr($_SESSION['user_name'] ?? 'P', 0, 1));
                 </a>
             <?php endforeach; ?>
         </nav>
-        <div class="p-logout">
-            <a href="../authentication/logout.php"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
-        </div>
     </aside>
     <div class="p-overlay" id="pOverlay"></div>
 
@@ -43,9 +40,15 @@ $initial = mb_strtoupper(mb_substr($_SESSION['user_name'] ?? 'P', 0, 1));
         <header class="p-top">
             <button type="button" class="p-burger" id="pToggle" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
             <h1><?= e($pageTitle) ?></h1>
-            <div class="p-user">
-                <span class="p-avatar"><?= e($initial) ?></span>
-                <div><strong><?= e($_SESSION['user_name'] ?? '') ?></strong><small>Parent</small></div>
+            <div class="p-user" id="pUser">
+                <button type="button" class="p-user-btn" id="pUserBtn" aria-haspopup="true" aria-expanded="false">
+                    <span class="p-avatar"><?= e($initial) ?></span>
+                    <div><strong><?= e($_SESSION['user_name'] ?? '') ?></strong><small>Parent</small></div>
+                    <i class="fa-solid fa-chevron-down p-caret"></i>
+                </button>
+                <nav class="p-menu" id="pMenu">
+                    <a href="../authentication/logout.php"><i class="fa-solid fa-right-from-bracket"></i>Logout</a>
+                </nav>
             </div>
         </header>
 
