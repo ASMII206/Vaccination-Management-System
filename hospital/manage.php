@@ -8,7 +8,7 @@ $errors = [];
 $errorsPw = [];
 $form = $hospital;
 
-/* ---------- Profile / password POST ---------- */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
 
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-/* ---------- Appointments ---------- */
+
 $search = trim($_GET['q'] ?? '');
 $filter = $_GET['status'] ?? '';
 if (!in_array($filter, ['Scheduled', 'Vaccinated', 'Not Vaccinated'], true)) $filter = '';

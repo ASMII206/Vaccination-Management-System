@@ -9,7 +9,7 @@
     if (overlay) overlay.addEventListener("click", function () { shell.classList.remove("open"); });
 })();
 
-/* Profile dropdown */
+
 (function () {
     var box = document.getElementById("pUser");
     var btn = document.getElementById("pUserBtn");

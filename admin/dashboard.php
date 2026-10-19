@@ -6,7 +6,7 @@ $active = 'dashboard.php';
 $today = date('Y-m-d');
 $soon = date('Y-m-d', strtotime('+30 days'));
 
-// Ek number (COUNT) wapis dene wali chhoti function
+
 function count_rows($sql) {
     global $conn;
     $result = mysqli_query($conn, $sql);

@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = mysqli_query($conn, "SELECT 1 FROM hospitals WHERE email = '$emailSafe' AND id <> $id");
         if (mysqli_num_rows($result) > 0) $errors[] = 'This email is already used by another hospital.';
 
-        // Parent ya admin account me bhi yeh email nahi hona chahiye
+
         $result = mysqli_query($conn, "SELECT 1 FROM parents WHERE email = '$emailSafe'");
         $usedByParent = mysqli_num_rows($result) > 0;
         $result = mysqli_query($conn, "SELECT 1 FROM admins WHERE email = '$emailSafe'");

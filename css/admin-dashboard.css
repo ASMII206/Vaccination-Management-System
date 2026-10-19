@@ -68,11 +68,11 @@ td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { mar
     td.actions { display: none; }
 }
 
-/* ==========================================
-   CONSISTENT DASHBOARD HOVER EFFECTS
-   ========================================== */
 
-/* Smooth transitions */
+
+
+
+
 .card,
 .stat,
 .pbtn,
@@ -94,14 +94,14 @@ td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { mar
         color 0.25s ease;
 }
 
-/* Dashboard cards */
+
 .card:hover,
 .stat:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 28px rgba(18, 48, 63, 0.14);
 }
 
-/* Buttons */
+
 .pbtn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 14px rgba(18, 48, 63, 0.12);
@@ -112,7 +112,7 @@ td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { mar
     border-color: #17552f;
 }
 
-/* Segmented navigation / filters */
+
 .seg a:hover {
     transform: translateY(-2px);
     border-color: var(--amber);
@@ -125,7 +125,7 @@ td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { mar
     color: #fff;
 }
 
-/* Input fields */
+
 .field:hover {
     border-color: #9aa8ba;
 }
@@ -135,7 +135,7 @@ td.actions .pbtn + .pbtn, td.actions form + .pbtn, td.actions .pbtn + form { mar
     box-shadow: 0 0 0 3px rgba(249, 166, 2, 0.2);
 }
 
-/* Table rows */
+
 tbody tr {
     transition: background-color 0.2s ease;
 }
@@ -144,14 +144,14 @@ tbody tr:hover td {
     background-color: #fbfdfe;
 }
 
-/* Status badges and navigation counters */
+
 .badge:hover,
 .tag:hover,
 .nav-badge:hover {
     transform: translateY(-2px);
 }
 
-/* Detail items */
+
 .detail > div,
 .detail > dl {
     transition: transform 0.25s ease;
@@ -162,7 +162,7 @@ tbody tr:hover td {
     transform: translateY(-2px);
 }
 
-/* Chart bars */
+
 .chart-row .bar {
     transition: width 0.5s ease, filter 0.25s ease;
 }
@@ -171,12 +171,12 @@ tbody tr:hover td {
     filter: brightness(1.08);
 }
 
-/* Modal stays stationary */
+
 .mod:hover {
     transform: none;
 }
 
-/* Keyboard accessibility */
+
 .pbtn:focus-visible,
 .seg a:focus-visible,
 .field:focus-visible {
@@ -184,7 +184,7 @@ tbody tr:hover td {
     outline-offset: 3px;
 }
 
-/* Respect reduced-motion preferences */
+
 @media (prefers-reduced-motion: reduce) {
     .card,
     .stat,

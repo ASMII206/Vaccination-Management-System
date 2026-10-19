@@ -17,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 date_default_timezone_set('Asia/Karachi');
 
-/* Database connection */
+
 mysqli_report(MYSQLI_REPORT_OFF);
 
 $conn = mysqli_connect(
@@ -33,16 +33,16 @@ if (!$conn) {
 
 mysqli_set_charset($conn, "utf8mb4");
 
-/* Ab se database errors exception ban jayenge (try/catch me kaam aaye) */
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-/* Text ko SQL query ke liye safe banao */
+
 function esc($value) {
     global $conn;
     return mysqli_real_escape_string($conn, (string)$value);
 }
 
-/* Khali value ho to NULL, warna 'value' (quotes ke saath) */
+
 function nullable($value) {
     if ($value === '' || $value === null) {
         return 'NULL';
@@ -50,18 +50,18 @@ function nullable($value) {
     return "'" . esc($value) . "'";
 }
 
-/* Escape output */
+
 function e($s) {
     return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
 
-/* Redirect */
+
 function redirect($url) {
     header('Location: ' . $url);
     exit;
 }
 
-/* Flash messages */
+
 function flash($type = null, $msg = null) {
     if ($msg !== null) {
         $_SESSION['flash'] = [$type, $msg];
@@ -77,7 +77,7 @@ function flash($type = null, $msg = null) {
     return null;
 }
 
-/* CSRF protection */
+
 function csrf_token() {
     if (empty($_SESSION['csrf'])) {
         $_SESSION['csrf'] = bin2hex(random_bytes(32));
@@ -105,7 +105,7 @@ function csrf_check() {
     }
 }
 
-/* Portal URLs */
+
 function portal_url($role) {
     $map = [
         'parent' => 'parent/dashboard.php',
@@ -120,7 +120,7 @@ function portal_url($role) {
         : null;
 }
 
-/* Parent access */
+
 function require_parent() {
     if (
         ($_SESSION['role'] ?? '') !== 'parent' ||
@@ -134,14 +134,14 @@ function parent_id() {
     return (int)($_SESSION['user_id'] ?? 0);
 }
 
-/* Admin access */
+
 function require_admin() {
     if (($_SESSION['role'] ?? '') !== 'admin') {
         redirect('../authentication/login.php');
     }
 }
 
-/* Hospital access */
+
 function require_hospital() {
     if (
         ($_SESSION['role'] ?? '') !== 'hospital' ||
@@ -155,7 +155,7 @@ function hospital_id() {
     return (int)($_SESSION['user_id'] ?? 0);
 }
 
-/* Check database column */
+
 function has_column($table, $column) {
     global $conn;
 
@@ -173,12 +173,12 @@ function has_column($table, $column) {
     return (bool)$row[0];
 }
 
-/* Format date */
+
 function fmt_date($d) {
     return $d ? date('d M Y', strtotime($d)) : '-';
 }
 
-/* Calculate age */
+
 function age_text($dob) {
     $diff = (new DateTime($dob))->diff(new DateTime('today'));
 
@@ -193,7 +193,7 @@ function age_text($dob) {
     return $diff->d . ' days';
 }
 
-/* Vaccination status */
+
 function schedule_status($row) {
     if ($row['is_vaccinated']) {
         return 'Vaccinated';
@@ -210,7 +210,7 @@ function schedule_status($row) {
         : 'Upcoming';
 }
 
-/* Status badges */
+
 function badge($text) {
     $map = [
         'Vaccinated' => 'green',
@@ -232,7 +232,7 @@ function badge($text) {
         e($text) . '</span>';
 }
 
-/* Generate child vaccination schedule */
+
 function generate_schedule($childId, $dob) {
     global $conn;
 

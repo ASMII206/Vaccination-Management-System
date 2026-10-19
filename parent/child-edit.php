@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE id = $id AND parent_id = $pid");
 
         if ($new['dob'] !== $child['dob']) {
-            // Date of birth badli to due dates dobara calculate karo
+
             mysqli_query($conn, "UPDATE child_vaccinations cv JOIN vaccines v ON v.id = cv.vaccine_id
                 SET cv.due_date = DATE_ADD('$dobSafe', INTERVAL v.age_in_days DAY)
                 WHERE cv.child_id = $id");

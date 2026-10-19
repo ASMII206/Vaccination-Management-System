@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $emailSafe = esc($email);
 
-        // Parent login check
+
         $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM parents WHERE email = '$emailSafe'");
         $row = mysqli_fetch_assoc($result);
 
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
         }
 
-        // Hospital login check
+
         if (!$account) {
             try {
                 $result = mysqli_query($conn, "SELECT id, name, password_hash FROM hospitals WHERE email = '$emailSafe'");
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Admin login check
+
         if (!$account && $error === '') {
             try {
                 $result = mysqli_query($conn, "SELECT id, full_name, password_hash FROM admins WHERE email = '$emailSafe'");

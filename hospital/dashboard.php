@@ -34,7 +34,7 @@ include __DIR__ . '/includes/layout_top.php';
 ?>
 
 <?php
-/* Chart geometry (display only): circle with circumference 100 */
+
 $chartSum = $vaccinated + $scheduled + $notVaccinated;
 $segments = [
     ['Vaccinated',     $vaccinated,    '#1f9d62', 'c-green'],

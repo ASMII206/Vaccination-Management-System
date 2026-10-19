@@ -2,7 +2,7 @@
 <?php
 include_once __DIR__ . '/../includes/config.php';
 
-// Agar user pehle se login hai, usay uske portal par bhej do
+
 if (!empty($_SESSION['role'])) {
     $url = portal_url($_SESSION['role']);
 
@@ -11,7 +11,7 @@ if (!empty($_SESSION['role'])) {
     }
 }
 
-// Registration form ki fields
+
 $fields = [
     'role' => '',
     'name' => '',
@@ -27,7 +27,7 @@ $fields = [
 
 $old = $fields;
 
-// URL se Parent ya Hospital select kiya gaya ho
+
 if (isset($_GET['role'])) {
     if (in_array($_GET['role'], ['parent', 'hospital'], true)) {
         $old['role'] = $_GET['role'];
@@ -39,11 +39,11 @@ $notice = flash();
 $loginError = '';
 $loginEmail = '';
 
-// Default view login hai, role select ho to registration khulegi
+
 $startView = isset($_GET['role']) ? 'register' : 'login';
 
 
-// ==================== LOGIN ====================
+
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'login') {
 
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'logi
 
         $loginEmailSafe = esc($loginEmail);
 
-        // Parent account check
+
         $result = mysqli_query($conn, "SELECT id, full_name, password_hash
             FROM parents
             WHERE email = '$loginEmailSafe'");
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'logi
             ];
         }
 
-        // Hospital account check
+
         if (!$account) {
             try {
                 $result = mysqli_query($conn, "SELECT id, name, password_hash
@@ -96,11 +96,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'logi
                 }
 
             } catch (mysqli_sql_exception $ex) {
-                // Hospital table ki query fail ho to agla account check hoga
+
             }
         }
 
-        // Admin account check
+
         if (!$account) {
             try {
                 $result = mysqli_query($conn, "SELECT id, full_name, password_hash
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'logi
             }
         }
 
-        // Login successful ho to portal open karo
+
         if (!$account) {
 
             if ($loginError == '') {
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'logi
 }
 
 
-// ==================== HOSPITAL LIST ====================
+
 
 $hospitalList = [];
 
@@ -163,7 +163,7 @@ while ($row = mysqli_fetch_row($result)) {
 }
 
 
-// Date check karne ka function
+
 function valid_date($date) {
     $newDate = DateTime::createFromFormat('Y-m-d', $date);
 
@@ -171,13 +171,13 @@ function valid_date($date) {
 }
 
 
-// ==================== REGISTRATION ====================
+
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'register') {
 
     $startView = 'register';
 
-    // Form ki values dobara fill karo
+
     foreach ($fields as $field => $value) {
         $old[$field] = trim($_POST[$field] ?? '');
     }
@@ -193,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
     $hospitalId = null;
 
 
-    // Session aur form validation
+
     if (!csrf_valid()) {
         $errors[] = 'Your session expired. Please try again.';
     }
@@ -234,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
     }
 
 
-    // Check karo ke email pehle se registered to nahi
+
     if ($emailOk) {
         $emailSafe = esc($old['email']);
 
@@ -256,11 +256,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
     }
 
 
-    // ==================== PARENT VALIDATION ====================
+
 
     if ($role == 'parent') {
 
-        // Child details optional hain
+
         if ($old['child_name'] != '' || $old['child_dob'] != '') {
             $hasChild = true;
         }
@@ -277,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
         }
 
 
-        // Hospital booking ki details check karo
+
         if ($old['hospital'] != '' || $old['vaccine_date'] != '') {
 
             if (!$hasChild) {
@@ -295,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
                 $hospitalSafe = esc($old['hospital']);
                 $found = [];
 
-                // Hospital ka exact naam check karo
+
                 $result = mysqli_query($conn, "SELECT id FROM hospitals
                     WHERE LOWER(name) = LOWER('$hospitalSafe')");
 
@@ -303,7 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
                     $found[] = $row['id'];
                 }
 
-                // Exact match na mile to partial name check karo
+
                 if (!$found) {
                     $result = mysqli_query($conn, "SELECT id FROM hospitals
                         WHERE name LIKE '%$hospitalSafe%'");
@@ -322,7 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
         }
 
 
-    // ==================== HOSPITAL VALIDATION ====================
+
 
     } elseif ($role == 'hospital') {
 
@@ -339,7 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
     }
 
 
-    // ==================== SAVE REGISTRATION ====================
+
 
     if (!$errors) {
 
@@ -354,7 +354,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
             $addressSafe = esc($old['address']);
 
 
-            // Parent register karo
+
             if ($role == 'parent') {
 
                 mysqli_query($conn, "INSERT INTO parents
@@ -364,7 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
                 $parentId = (int) mysqli_insert_id($conn);
 
 
-                // Child ki details save karo
+
                 if ($hasChild) {
 
                     $childNameSafe = esc($old['child_name']);
@@ -376,11 +376,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
 
                     $childId = (int) mysqli_insert_id($conn);
 
-                    // Child ka vaccination schedule banao
+
                     generate_schedule($childId, $old['child_dob']);
 
 
-                    // Hospital select kiya ho to appointment banao
+
                     if ($hospitalId) {
 
                         $result = mysqli_query($conn, "
@@ -413,7 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
                 }
 
 
-            // Hospital register karo
+
             } else {
 
                 $locationSafe = esc($old['location']);
@@ -424,7 +424,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
             }
 
 
-            // Data save ho gaya
+
             mysqli_commit($conn);
 
             flash('success', 'Registration successful. Please log in.');
@@ -433,7 +433,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && ($_POST['form_type'] ?? '') == 'regi
 
         } catch (mysqli_sql_exception $e) {
 
-            // Error aaye to database changes undo karo
+
             try {
                 mysqli_rollback($conn);
             } catch (mysqli_sql_exception $rollbackError) {

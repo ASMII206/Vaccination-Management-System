@@ -1,5 +1,5 @@
 (function () {
-    /* Mobile sidebar toggle (same as parent portal) */
+
     var shell = document.querySelector(".p-shell");
     var burger = document.getElementById("pToggle");
     var overlay = document.getElementById("pOverlay");
@@ -8,7 +8,7 @@
         if (overlay) overlay.addEventListener("click", function () { shell.classList.remove("open"); });
     }
 
-    /* Status modal */
+
     var modal = document.getElementById("statusModal");
     if (!modal) return;
 
@@ -41,7 +41,7 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
 })();
 
-/* Profile dropdown */
+
 (function () {
     var box = document.getElementById("pUser");
     var btn = document.getElementById("pUserBtn");

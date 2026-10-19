@@ -300,7 +300,7 @@ label.lbl:first-child { margin-top: 0; }
     * { transition-duration: 0.01ms !important; }
 }
 
-/* ---------- Profile dropdown (logout) ---------- */
+
 .p-user { position: relative; }
 .p-user-btn {
     display: flex; align-items: center; gap: 12px;
@@ -327,11 +327,11 @@ label.lbl:first-child { margin-top: 0; }
 .p-menu a i { width: 16px; text-align: center; }
 
 
-/* ==========================================
-   VAXCARE DASHBOARD - ENHANCED HOVER EFFECTS
-   ========================================== */
 
-/* Smooth transitions */
+
+
+
+
 .card,
 .stat,
 .pbtn,
@@ -355,14 +355,14 @@ label.lbl:first-child { margin-top: 0; }
         color 0.25s ease;
 }
 
-/* Dashboard content cards */
+
 .card:hover,
 .stat:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 28px rgba(18, 48, 63, 0.14);
 }
 
-/* Sidebar navigation */
+
 .p-nav a:hover,
 .p-logout a:hover {
     color: var(--amber);
@@ -376,7 +376,7 @@ label.lbl:first-child { margin-top: 0; }
     border-left-color: var(--amber);
 }
 
-/* Buttons */
+
 .pbtn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 14px rgba(18, 48, 63, 0.12);
@@ -394,7 +394,7 @@ label.lbl:first-child { margin-top: 0; }
     color: #fff;
 }
 
-/* Segmented navigation */
+
 .seg a:hover {
     transform: translateY(-2px);
     border-color: var(--amber);
@@ -407,7 +407,7 @@ label.lbl:first-child { margin-top: 0; }
     color: #fff;
 }
 
-/* Notifications and selectable options */
+
 .notify li:hover,
 .choice:hover {
     transform: translateY(-2px);
@@ -426,26 +426,26 @@ label.lbl:first-child { margin-top: 0; }
     background: #fff9ea;
 }
 
-/* Hospital cards */
+
 .hospital-card:hover {
     transform: translateY(-3px);
     border-color: var(--amber);
     box-shadow: 0 12px 24px rgba(18, 48, 63, 0.12);
 }
 
-/* Individual list items */
+
 .row-item:hover {
     transform: translateY(-1px);
 }
 
-/* Status badges and profile avatar */
+
 .badge:hover,
 .nav-badge:hover,
 .p-avatar:hover {
     transform: translateY(-2px);
 }
 
-/* Profile dropdown */
+
 .p-user-btn:hover,
 .p-user.open .p-user-btn {
     background: var(--bg);
@@ -456,7 +456,7 @@ label.lbl:first-child { margin-top: 0; }
     color: var(--navy);
 }
 
-/* Form fields */
+
 .field:hover {
     border-color: #9aa8ba;
 }
@@ -466,12 +466,12 @@ label.lbl:first-child { margin-top: 0; }
     box-shadow: 0 0 0 3px rgba(249, 166, 2, 0.18);
 }
 
-/* Tables */
+
 tbody tr:hover td {
     background: #fbfdfe;
 }
 
-/* Keyboard accessibility */
+
 .pbtn:focus-visible,
 .p-nav a:focus-visible,
 .p-logout a:focus-visible,
@@ -482,12 +482,12 @@ tbody tr:hover td {
     outline-offset: 3px;
 }
 
-/* Do not animate modal movement */
+
 .mod:hover {
     transform: none;
 }
 
-/* Respect reduced-motion settings */
+
 @media (prefers-reduced-motion: reduce) {
     .card,
     .stat,
